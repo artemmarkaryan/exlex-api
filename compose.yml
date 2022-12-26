@@ -1,0 +1,12 @@
+version: '2'
+services:
+  db:
+    image: postgres:13.5
+    environment:
+      - "POSTGRES_DB=exlex"
+      - "POSTGRES_PASSWORD=password"
+      - "POSTGRES_USER=user"
+      - "PGDATA=/var/lib/postgresql/data/exlex"
+    ports:
+      - "54115:5432"
+    command: [ "postgres", "-c", "log_statement=all" ]
