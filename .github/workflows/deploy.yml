@@ -17,7 +17,7 @@ jobs:
           go-version: 1.19
 
       - name: go build
-        run: go build -o ./cmd/main.go ./bin/main
+        run: mkdir bin && go build -o ./cmd/main.go ./bin/main
 
       - name: ssh deploy
         uses: easingthemes/ssh-deploy@main
