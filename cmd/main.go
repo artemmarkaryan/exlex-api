@@ -8,5 +8,6 @@ import (
 )
 
 func main() {
-	log.Fatal(http.ListenAndServe("localhost:8080", nil))
+	log.Print("Serving...")
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }
