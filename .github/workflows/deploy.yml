@@ -30,8 +30,9 @@ jobs:
 
       - name: restart process
         uses: cross-the-world/ssh-pipeline@v1.2.0
-        host: ${{ secrets.REMOTE_HOST }}
-        user: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          pmgo restart exlex-api
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          user: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            pmgo restart exlex-api
