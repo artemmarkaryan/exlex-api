@@ -35,4 +35,4 @@ jobs:
           user: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            pmgo restart exlex-api
+            systemctl restart exlex-api
