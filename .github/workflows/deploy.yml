@@ -38,5 +38,5 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             goose -dir=/root/exlex-api/migration up &&
-            goose goose -dir=/root/exlex-api/migration status && 
+            goose -dir=/root/exlex-api/migration status && 
             systemctl restart exlex-api
