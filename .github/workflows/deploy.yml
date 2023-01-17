@@ -17,22 +17,26 @@ jobs:
           go-version: 1.19
 
       - name: go build
-        run: mkdir bin && go build -o ./bin/main ./cmd/main.go
+        run: mkdir bin && \
+          go build -o ./export/bin/main ./cmd/main.go && \
+          cp -r ./migration ./export/migration
 
       - name: ssh deploy
         uses: easingthemes/ssh-deploy@main
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
-          SOURCE: "bin/"
+          SOURCE: "export/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: "exlex-api"
 
-      - name: restart process
+      - name: migrate & restart process
         uses: cross-the-world/ssh-pipeline@v1.2.0
         with:
           host: ${{ secrets.REMOTE_HOST }}
           user: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            goose up &&
+            goose status && 
             systemctl restart exlex-api
