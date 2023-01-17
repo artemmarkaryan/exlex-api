@@ -17,7 +17,9 @@ jobs:
           go-version: 1.19
 
       - name: go build
-        run: mkdir bin && go build -o ./export/bin/main ./cmd/main.go && cp -r ./migration ./export/migration
+        run: mkdir bin &&
+          go build -o ./export/bin/main ./cmd/main.go && 
+          cp -r ./migration ./export/migration
 
       - name: ssh deploy
         uses: easingthemes/ssh-deploy@main
@@ -35,6 +37,6 @@ jobs:
           user: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            goose up &&
-            goose status && 
+            goose -dir=/root/exlex-api/migration up &&
+            goose goose -dir=/root/exlex-api/migration status && 
             systemctl restart exlex-api
