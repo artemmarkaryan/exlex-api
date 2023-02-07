@@ -1,7 +1,7 @@
 version: '2'
 services:
   db:
-    image: postgres:13.5
+    image: postgres:15
     environment:
       - "POSTGRES_DB=exlex"
       - "POSTGRES_PASSWORD=password"

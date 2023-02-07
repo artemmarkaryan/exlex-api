@@ -1,4 +1,5 @@
 .idea/
 bin/
+local/
 .env
 compose.yml
