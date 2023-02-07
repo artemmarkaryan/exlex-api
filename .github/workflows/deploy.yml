@@ -32,5 +32,5 @@ jobs:
           user: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: | 
-            go build -o ./bin/main ./cmd/main.go \
+            go build -o ./bin/main ./cmd/main.go && \
             systemctl restart exlex-api
