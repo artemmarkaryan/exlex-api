@@ -18,7 +18,7 @@ jobs:
 
       - name: go build
         run: mkdir bin &&
-          go build -o ./export/bin/main ./cmd/main.go &&
+          go build -o ./export/bin/main ./cmd/main.go
 
       - name: ssh deploy
         uses: easingthemes/ssh-deploy@main
