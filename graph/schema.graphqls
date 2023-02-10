@@ -1,0 +1,7 @@
+type Query {
+  live: Boolean
+}
+
+type Mutation {
+  live: Boolean
+}
