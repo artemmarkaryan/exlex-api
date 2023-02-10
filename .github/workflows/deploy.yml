@@ -33,5 +33,5 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: | 
             pwd
-            go build -o ./bin/main ./cmd/main.go
+            go build -o /root/exlex-api/bin/main /root/exlex-api/cmd/main.go
             systemctl restart exlex-api
