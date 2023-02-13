@@ -1,7 +1,17 @@
 type Query {
-  live: Boolean
+    live: Boolean
 }
 
 type Mutation {
-  live: Boolean
+    signup(form: SignUpForm!): Tokens
+}
+
+input SignUpForm {
+    login:    String!
+    password: String!
+}
+
+type Tokens {
+    access:  String!
+    refresh: String!
 }

@@ -1,5 +1,7 @@
 .idea/
 bin/
 local/
+tmp/
 .env
+.air.toml
 compose.yml

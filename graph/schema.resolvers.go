@@ -6,12 +6,21 @@ package graph
 
 import (
 	"context"
+
+	"github.com/artemmarkaryan/exlex-backend/graph/model"
 )
 
-// Live is the resolver for the live field.
-func (r *mutationResolver) Live(ctx context.Context) (res *bool, err error) {
-	t := true
-	return &t, nil
+// Signup is the resolver for the signup field.
+func (r *mutationResolver) Signup(ctx context.Context, form model.SignUpForm) (*model.Tokens, error) {
+	_, err := r.ServiceContainer.Authentication().CreateUser(ctx, form.Login, form.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Tokens{
+		Access:  "mock",
+		Refresh: "mock",
+	}, nil
 }
 
 // Live is the resolver for the live field.
@@ -28,3 +37,14 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *mutationResolver) Live(ctx context.Context) (res *bool, err error) {
+	t := true
+	return &t, nil
+}
