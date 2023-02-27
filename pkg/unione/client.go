@@ -51,7 +51,7 @@ func (c Client) Send(m Message) error {
 	}
 
 	resp, err := c.client.Post(path, "application/json", bytes.NewReader(body))
-	{
+	if statusCode := resp.StatusCode; statusCode != http.StatusOK || err != nil {
 		b, _ := io.ReadAll(resp.Body)
 		log.Print("unione response: ", resp.StatusCode, resp.Status, string(b))
 	}

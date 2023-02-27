@@ -1,17 +1,13 @@
+directive @authorized on FIELD_DEFINITION
+
 type Query {
     live: Boolean!
+    authorized: Boolean! @authorized
 }
 
 type Mutation {
-    requestOTP(
-        email: String!,
-        debug: Boolean!
-    ): Ok!
-
-    verifyOTP(
-        email: String!,
-        otp: String!
-    ): Token!
+    requestOTP(email: String!, debug: Boolean!): Ok!
+    verifyOTP(email: String!,otp: String!): Token!
 }
 
 type Ok {

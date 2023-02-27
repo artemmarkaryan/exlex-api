@@ -10,6 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/artemmarkaryan/exlex-backend/graph"
+	"github.com/artemmarkaryan/exlex-backend/internal/auth"
 	"github.com/artemmarkaryan/exlex-backend/internal/service"
 	"github.com/artemmarkaryan/exlex-backend/pkg/database"
 	"github.com/artemmarkaryan/exlex-backend/pkg/telegram"
@@ -54,28 +55,23 @@ func Serve(ctx context.Context) (err error) {
 
 	router := chi.NewRouter()
 	router.Use(
-		ContextPropagateMiddleware(ctx),
-		// todo: auth
+		MiddlewareContextPropagate(ctx),
+		auth.Middleware,
 		// todo: log errors
 	)
 
-	graphqlSchema := graph.NewExecutableSchema(
-		graph.Config{
-			Resolvers: &graph.Resolver{
-				ServiceContainer: serviceContainer,
-			},
-		},
-	)
+	config := graph.Config{Resolvers: &graph.Resolver{ServiceContainer: serviceContainer}}
+	config.Directives.Authorized = auth.DirectiveAuthorized
 
 	playgroundPath := "playground"
 	router.Handle("/"+playgroundPath, playground.Handler("playground", "/query"))
-	router.Handle("/query", handler.NewDefaultServer(graphqlSchema))
+	router.Handle("/query", handler.NewDefaultServer(graph.NewExecutableSchema(config)))
 
 	log.Printf("connect to http://localhost:%s/%s for GraphQL playground", port, playgroundPath)
 	return http.ListenAndServe(":"+port, router)
 }
 
-func ContextPropagateMiddleware(parentCtx context.Context) func(handler http.Handler) http.Handler {
+func MiddlewareContextPropagate(parentCtx context.Context) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {

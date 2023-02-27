@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/artemmarkaryan/exlex-backend/internal/auth"
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/artemmarkaryan/exlex-backend/internal/service/otp"
 	"github.com/artemmarkaryan/exlex-backend/pkg/database"
@@ -69,7 +70,7 @@ func (s Service) VerifyOTP(ctx context.Context, email string, o string) (token s
 		return
 	}
 
-	t, err := s.tokenFactory.NewToken(MakeClaim(user.ID, user.Email))
+	t, err := s.tokenFactory.NewToken(auth.MakeClaim(user.ID, user.Email))
 	if err != nil {
 		return
 	}

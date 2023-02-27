@@ -48,7 +48,7 @@ func (s Service) GenerateAndSend(ctx context.Context, id uuid.UUID, email string
 	}
 
 	if debug {
-		log.Print("Code: ", code)
+		log.Print("[debug] confirmation otp: ", code)
 		telegram.Report(ctx, fmt.Sprintf("code: %v", code))
 	} else {
 		err = s.unione.Send(

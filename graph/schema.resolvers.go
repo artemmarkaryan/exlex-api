@@ -9,6 +9,7 @@ import (
 	"net/mail"
 
 	"github.com/artemmarkaryan/exlex-backend/graph/model"
+	"github.com/artemmarkaryan/exlex-backend/internal/auth"
 )
 
 // RequestOtp is the resolver for the requestOTP field.
@@ -40,6 +41,12 @@ func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp stri
 // Live is the resolver for the live field.
 func (r *queryResolver) Live(ctx context.Context) (bool, error) {
 	return true, nil
+}
+
+// Authorized is the resolver for the authorized field.
+func (r *queryResolver) Authorized(ctx context.Context) (bool, error) {
+	_, err := auth.FromContext(ctx)
+	return err != auth.ErrUnauthenticated, err
 }
 
 // Mutation returns MutationResolver implementation.
