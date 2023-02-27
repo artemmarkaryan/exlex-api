@@ -2,6 +2,7 @@ package otp
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 	"math/rand"
@@ -9,6 +10,11 @@ import (
 
 	"github.com/artemmarkaryan/exlex-backend/pkg/unione"
 	"github.com/google/uuid"
+)
+
+var (
+	ErrNotFound = errors.New("no OTP found")
+	ErrWrongOTP = errors.New("wrong OTP")
 )
 
 type Config struct {
@@ -54,6 +60,25 @@ func (s Service) GenerateAndSend(ctx context.Context, id uuid.UUID, email string
 	if err != nil {
 		log.Print("unione: " + err.Error())
 		return errors.New("sending message failed")
+	}
+
+	return nil
+}
+
+func (s Service) Verify(ctx context.Context, email string, input string) error {
+	otp, err := s.repo.get(ctx, email)
+	if err == sql.ErrNoRows {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if input != otp {
+		return ErrWrongOTP
+	}
+
+	if err = s.repo.delete(ctx, email); err != nil {
+		log.Printf("error deleting otp: %v", err)
 	}
 
 	return nil

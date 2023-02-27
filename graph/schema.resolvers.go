@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"net/mail"
 
 	"github.com/artemmarkaryan/exlex-backend/graph/model"
@@ -24,17 +23,14 @@ func (r *mutationResolver) RequestOtp(ctx context.Context, email string) (*model
 }
 
 // VerifyOtp is the resolver for the verifyOTP field.
-func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp string) (*model.Tokens, error) {
+func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp string) (*model.Token, error) {
 	_, err := mail.ParseAddress(email)
 	if err != nil {
 		return nil, err
 	}
 
-	panic(fmt.Errorf("not implemented: VerifyOtp - verifyOTP"))
-	// 	&model.Tokens{
-	//		Access:  t.Access,
-	//		Refresh: t.Refresh,
-	//	}, nil
+	token, err := r.ServiceContainer.Authentication().VerifyOTP(ctx, email, otp)
+	return &model.Token{Access: token}, err
 }
 
 // Live is the resolver for the live field.
@@ -51,14 +47,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *mutationResolver) Live(ctx context.Context) (res *bool, err error) {
-	t := true
-	return &t, nil
-}

@@ -6,7 +6,6 @@ type Ok struct {
 	Ok bool `json:"ok"`
 }
 
-type Tokens struct {
-	Access  string `json:"access"`
-	Refresh string `json:"refresh"`
+type Token struct {
+	Access string `json:"access"`
 }

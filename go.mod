@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/99designs/gqlgen v0.17.24
 	github.com/Masterminds/squirrel v1.5.3
-	github.com/alexeyco/unione v0.2.0
+	github.com/cristalhq/jwt/v5 v5.0.1
 	github.com/go-chi/chi v1.5.4
 	github.com/google/uuid v1.3.0
 	github.com/jmoiron/sqlx v1.3.5

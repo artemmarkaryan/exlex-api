@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/artemmarkaryan/exlex-backend/pkg/database"
 	"github.com/google/uuid"
 )
@@ -15,7 +16,7 @@ func (r repo) getOrCreateUser(ctx context.Context, email string) (id uuid.UUID, 
 	id, err = database.GetX[uuid.UUID](
 		ctx, sq.
 			Select("id").
-			From(new(User).TableName()).
+			From(new(schema.UserAuth).TableName()).
 			Where(sq.Eq{"email": email}),
 	)
 
@@ -24,7 +25,7 @@ func (r repo) getOrCreateUser(ctx context.Context, email string) (id uuid.UUID, 
 	}
 
 	q := sq.
-		Insert(new(User).TableName()).
+		Insert(new(schema.UserAuth).TableName()).
 		SetMap(map[string]any{"email": email}).
 		Suffix("returning id")
 

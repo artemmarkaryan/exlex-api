@@ -9,7 +9,8 @@ ssh root@178.21.10.214
 ## Требуемые переменные окружения
 
 - `PSQL_DSN`
-- `UNIONE_TOKEN` - токен UNIONE
+- `UNIONE_TOKEN`
+- `JWT_SECRET_KEY`
 
 ## Генерация ручек
 

@@ -1,10 +1,17 @@
-package otp
+package schema
 
 import (
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type UserAuth struct {
+	ID    uuid.UUID `db:"id"`
+	Email string    `db:"email"`
+}
+
+func (u UserAuth) TableName() string { return "user_auth" }
 
 type UserOTP struct {
 	userUUID  uuid.UUID `db:"user_uuid"`

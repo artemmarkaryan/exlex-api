@@ -57,15 +57,14 @@ type ComplexityRoot struct {
 		Live func(childComplexity int) int
 	}
 
-	Tokens struct {
-		Access  func(childComplexity int) int
-		Refresh func(childComplexity int) int
+	Token struct {
+		Access func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
 	RequestOtp(ctx context.Context, email string) (*model.Ok, error)
-	VerifyOtp(ctx context.Context, email string, otp string) (*model.Tokens, error)
+	VerifyOtp(ctx context.Context, email string, otp string) (*model.Token, error)
 }
 type QueryResolver interface {
 	Live(ctx context.Context) (*bool, error)
@@ -124,19 +123,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Live(childComplexity), true
 
-	case "Tokens.access":
-		if e.complexity.Tokens.Access == nil {
+	case "Token.access":
+		if e.complexity.Token.Access == nil {
 			break
 		}
 
-		return e.complexity.Tokens.Access(childComplexity), true
-
-	case "Tokens.refresh":
-		if e.complexity.Tokens.Refresh == nil {
-			break
-		}
-
-		return e.complexity.Tokens.Refresh(childComplexity), true
+		return e.complexity.Token.Access(childComplexity), true
 
 	}
 	return 0, false
@@ -399,9 +391,9 @@ func (ec *executionContext) _Mutation_verifyOTP(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Tokens)
+	res := resTmp.(*model.Token)
 	fc.Result = res
-	return ec.marshalNTokens2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐTokens(ctx, field.Selections, res)
+	return ec.marshalNToken2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_verifyOTP(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -413,11 +405,9 @@ func (ec *executionContext) fieldContext_Mutation_verifyOTP(ctx context.Context,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "access":
-				return ec.fieldContext_Tokens_access(ctx, field)
-			case "refresh":
-				return ec.fieldContext_Tokens_refresh(ctx, field)
+				return ec.fieldContext_Token_access(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Tokens", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Token", field.Name)
 		},
 	}
 	defer func() {
@@ -645,8 +635,8 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Tokens_access(ctx context.Context, field graphql.CollectedField, obj *model.Tokens) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tokens_access(ctx, field)
+func (ec *executionContext) _Token_access(ctx context.Context, field graphql.CollectedField, obj *model.Token) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Token_access(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -676,53 +666,9 @@ func (ec *executionContext) _Tokens_access(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Tokens_access(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Token_access(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Tokens",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Tokens_refresh(ctx context.Context, field graphql.CollectedField, obj *model.Tokens) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tokens_refresh(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Refresh, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Tokens_refresh(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Tokens",
+		Object:     "Token",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2638,26 +2584,19 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var tokensImplementors = []string{"Tokens"}
+var tokenImplementors = []string{"Token"}
 
-func (ec *executionContext) _Tokens(ctx context.Context, sel ast.SelectionSet, obj *model.Tokens) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, tokensImplementors)
+func (ec *executionContext) _Token(ctx context.Context, sel ast.SelectionSet, obj *model.Token) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tokenImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Tokens")
+			out.Values[i] = graphql.MarshalString("Token")
 		case "access":
 
-			out.Values[i] = ec._Tokens_access(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "refresh":
-
-			out.Values[i] = ec._Tokens_refresh(ctx, field, obj)
+			out.Values[i] = ec._Token_access(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -3035,18 +2974,18 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNTokens2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐTokens(ctx context.Context, sel ast.SelectionSet, v model.Tokens) graphql.Marshaler {
-	return ec._Tokens(ctx, sel, &v)
+func (ec *executionContext) marshalNToken2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx context.Context, sel ast.SelectionSet, v model.Token) graphql.Marshaler {
+	return ec._Token(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTokens2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐTokens(ctx context.Context, sel ast.SelectionSet, v *model.Tokens) graphql.Marshaler {
+func (ec *executionContext) marshalNToken2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx context.Context, sel ast.SelectionSet, v *model.Token) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._Tokens(ctx, sel, v)
+	return ec._Token(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
