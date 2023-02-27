@@ -10,15 +10,24 @@ import (
 
 	"github.com/artemmarkaryan/exlex-backend/graph/model"
 	"github.com/artemmarkaryan/exlex-backend/internal/auth"
+	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 )
 
-// RequestOtp is the resolver for the requestOTP field.
-func (r *mutationResolver) RequestOtp(ctx context.Context, email string, debug bool) (ok model.Ok, err error) {
-	if _, err = mail.ParseAddress(email); err != nil {
+// Login is the resolver for the login field.
+func (r *mutationResolver) Login(ctx context.Context, data model.LoginData) (ok model.Ok, err error) {
+	err = r.ServiceContainer.Authentication().Login(ctx, data.Email, data.Debug)
+	ok.Ok = err == nil
+	return
+}
+
+// Signup is the resolver for the signup field.
+func (r *mutationResolver) Signup(ctx context.Context, data model.SignupData) (ok model.Ok, err error) {
+	role, err := schema.MapRole(data.Role)
+	if err != nil {
 		return
 	}
 
-	err = r.ServiceContainer.Authentication().RequestOTP(ctx, email, debug)
+	err = r.ServiceContainer.Authentication().Signup(ctx, data.Email, role, data.Debug)
 	ok.Ok = err == nil
 	return
 }

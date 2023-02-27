@@ -46,8 +46,9 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		RequestOtp func(childComplexity int, email string, debug bool) int
-		VerifyOtp  func(childComplexity int, email string, otp string) int
+		Login     func(childComplexity int, data model.LoginData) int
+		Signup    func(childComplexity int, data model.SignupData) int
+		VerifyOtp func(childComplexity int, email string, otp string) int
 	}
 
 	Ok struct {
@@ -65,7 +66,8 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	RequestOtp(ctx context.Context, email string, debug bool) (model.Ok, error)
+	Login(ctx context.Context, data model.LoginData) (model.Ok, error)
+	Signup(ctx context.Context, data model.SignupData) (model.Ok, error)
 	VerifyOtp(ctx context.Context, email string, otp string) (model.Token, error)
 }
 type QueryResolver interface {
@@ -88,17 +90,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Mutation.requestOTP":
-		if e.complexity.Mutation.RequestOtp == nil {
+	case "Mutation.login":
+		if e.complexity.Mutation.Login == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_requestOTP_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_login_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RequestOtp(childComplexity, args["email"].(string), args["debug"].(bool)), true
+		return e.complexity.Mutation.Login(childComplexity, args["data"].(model.LoginData)), true
+
+	case "Mutation.signup":
+		if e.complexity.Mutation.Signup == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_signup_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Signup(childComplexity, args["data"].(model.SignupData)), true
 
 	case "Mutation.verifyOTP":
 		if e.complexity.Mutation.VerifyOtp == nil {
@@ -147,7 +161,10 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
-	inputUnmarshalMap := graphql.BuildUnmarshalerMap()
+	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputloginData,
+		ec.unmarshalInputsignupData,
+	)
 	first := true
 
 	switch rc.Operation.Operation {
@@ -226,27 +243,33 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_requestOTP_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["email"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 model.LoginData
+	if tmp, ok := rawArgs["data"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
+		arg0, err = ec.unmarshalNloginData2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐLoginData(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["email"] = arg0
-	var arg1 bool
-	if tmp, ok := rawArgs["debug"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("debug"))
-		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+	args["data"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_signup_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.SignupData
+	if tmp, ok := rawArgs["data"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
+		arg0, err = ec.unmarshalNsignupData2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐSignupData(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["debug"] = arg1
+	args["data"] = arg0
 	return args, nil
 }
 
@@ -327,8 +350,8 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Mutation_requestOTP(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_requestOTP(ctx, field)
+func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_login(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -341,7 +364,7 @@ func (ec *executionContext) _Mutation_requestOTP(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RequestOtp(rctx, fc.Args["email"].(string), fc.Args["debug"].(bool))
+		return ec.resolvers.Mutation().Login(rctx, fc.Args["data"].(model.LoginData))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -357,7 +380,7 @@ func (ec *executionContext) _Mutation_requestOTP(ctx context.Context, field grap
 	return ec.marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_requestOTP(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -378,7 +401,65 @@ func (ec *executionContext) fieldContext_Mutation_requestOTP(ctx context.Context
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_requestOTP_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_login_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_signup(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_signup(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Signup(rctx, fc.Args["data"].(model.SignupData))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Ok)
+	fc.Result = res
+	return ec.marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_signup(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ok":
+				return ec.fieldContext_Ok_ok(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Ok", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_signup_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -2537,6 +2618,86 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputloginData(ctx context.Context, obj interface{}) (model.LoginData, error) {
+	var it model.LoginData
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"email", "debug"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			it.Email, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "debug":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("debug"))
+			it.Debug, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputsignupData(ctx context.Context, obj interface{}) (model.SignupData, error) {
+	var it model.SignupData
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"email", "role", "debug"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			it.Email, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "role":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
+			it.Role, err = ec.unmarshalNRole2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "debug":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("debug"))
+			it.Debug, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2563,10 +2724,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "requestOTP":
+		case "login":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_requestOTP(ctx, field)
+				return ec._Mutation_login(ctx, field)
+			})
+
+		case "signup":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_signup(ctx, field)
 			})
 
 		case "verifyOTP":
@@ -3054,6 +3221,16 @@ func (ec *executionContext) marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑb
 	return ec._Ok(ctx, sel, &v)
 }
 
+func (ec *executionContext) unmarshalNRole2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx context.Context, v interface{}) (model.Role, error) {
+	var res model.Role
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRole2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v model.Role) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3324,6 +3501,16 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNloginData2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐLoginData(ctx context.Context, v interface{}) (model.LoginData, error) {
+	res, err := ec.unmarshalInputloginData(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNsignupData2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐSignupData(ctx context.Context, v interface{}) (model.SignupData, error) {
+	res, err := ec.unmarshalInputsignupData(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

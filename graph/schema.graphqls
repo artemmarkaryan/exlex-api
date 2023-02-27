@@ -6,8 +6,20 @@ type Query {
 }
 
 type Mutation {
-    requestOTP(email: String!, debug: Boolean!): Ok!
-    verifyOTP(email: String!,otp: String!): Token!
+    login(data: loginData!): Ok!
+    signup(data: signupData!): Ok!
+    verifyOTP(email: String!, otp: String!): Token!
+}
+
+input loginData {
+    email: String!
+    debug: Boolean!
+}
+
+input signupData {
+    email: String!
+    role: Role!
+    debug: Boolean!
 }
 
 type Ok {
@@ -16,4 +28,9 @@ type Ok {
 
 type Token {
     access: String!
+}
+
+enum Role {
+    EXECUTOR
+    CUSTOMER
 }

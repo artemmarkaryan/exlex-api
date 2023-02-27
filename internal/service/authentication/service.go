@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"context"
+	"errors"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/artemmarkaryan/exlex-backend/internal/auth"
@@ -12,6 +13,8 @@ import (
 	"github.com/cristalhq/jwt/v5"
 	"github.com/google/uuid"
 )
+
+var ErrAlreadyExists = errors.New("user already exists")
 
 type serviceContainer interface {
 	OTP() otp.Service
@@ -41,8 +44,21 @@ func Make(ctx context.Context, container serviceContainer) (s Service) {
 	return
 }
 
-func (s Service) RequestOTP(ctx context.Context, email string, debug bool) (err error) {
-	id, err := s.getOrCreateUser(ctx, email)
+func (s Service) Signup(ctx context.Context, email string, role schema.Role, debug bool) (err error) {
+	id, err := s.createUser(ctx, email, role)
+	if err != nil {
+		return err
+	}
+
+	if err = s.otpService.GenerateAndSend(ctx, id, email, debug); err != nil {
+		return err
+	}
+
+	return
+}
+
+func (s Service) Login(ctx context.Context, email string, debug bool) (err error) {
+	id, err := s.getUser(ctx, email)
 	if err != nil {
 		return err
 	}
