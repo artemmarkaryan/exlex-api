@@ -11,27 +11,15 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
 
-      - name: go setup
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.19
-
       - name: ssh deploy
         uses: easingthemes/ssh-deploy@main
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
           SOURCE: "./"
+          EXCLUDE: "/.github/, /.git/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: "exlex-api"
+          TARGET: "/root/exlex-api"
+          SCRIPT_BEFORE: "rm -rf /root/exlex-api && mkdir /root/exlex-api"
+          SCRIPT_AFTER: "cd /root/exlex-api && /usr/bin/go build -o ./bin/main ./cmd/main.go && systemctl restart exlex-api"
 
-      - name: restart process
-        uses: cross-the-world/ssh-pipeline@v1.2.0
-        with:
-          host: ${{ secrets.REMOTE_HOST }}
-          user: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /root/exlex-api
-            /usr/bin/go build -o ./bin/main ./cmd/main.go
-            systemctl restart exlex-api
