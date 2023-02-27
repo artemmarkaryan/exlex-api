@@ -50,9 +50,15 @@ func (r repo) get(ctx context.Context, email string) (string, error) {
 
 func (r repo) delete(ctx context.Context, email string) error {
 	u := new(schema.UserAuth).TableName()
-	q := sq.Delete(new(schema.UserOTP).TableName()).
-		Where(sq.Eq{"user_uuid": "(select uuid from " + u + " where email = ?)"}, email)
+	e, args, err := sq.Expr("user_uuid = (select id from "+u+" where email = ?)", email).ToSql()
+	if err != nil {
+		return err
+	}
 
-	_, err := database.DeleteX(ctx, q)
+	q := sq.
+		Delete(new(schema.UserOTP).TableName()).
+		Where(e, args...)
+
+	_, err = database.DeleteX(ctx, q)
 	return err
 }

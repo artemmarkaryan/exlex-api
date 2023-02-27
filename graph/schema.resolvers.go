@@ -12,31 +12,34 @@ import (
 )
 
 // RequestOtp is the resolver for the requestOTP field.
-func (r *mutationResolver) RequestOtp(ctx context.Context, email string) (*model.Ok, error) {
-	_, err := mail.ParseAddress(email)
-	if err != nil {
-		return nil, err
+func (r *mutationResolver) RequestOtp(ctx context.Context, email string) (ok model.Ok, err error) {
+	if _, err = mail.ParseAddress(email); err != nil {
+		return
 	}
 
 	err = r.ServiceContainer.Authentication().RequestOTP(ctx, email)
-	return &model.Ok{Ok: err == nil}, err
+	ok.Ok = err == nil
+	return
 }
 
 // VerifyOtp is the resolver for the verifyOTP field.
-func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp string) (*model.Token, error) {
-	_, err := mail.ParseAddress(email)
-	if err != nil {
-		return nil, err
+func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp string) (token model.Token, err error) {
+	if _, err = mail.ParseAddress(email); err != nil {
+		return
 	}
 
-	token, err := r.ServiceContainer.Authentication().VerifyOTP(ctx, email, otp)
-	return &model.Token{Access: token}, err
+	t, err := r.ServiceContainer.Authentication().VerifyOTP(ctx, email, otp)
+	if err != nil {
+		return
+	}
+
+	token.Access = t
+	return
 }
 
 // Live is the resolver for the live field.
-func (r *queryResolver) Live(ctx context.Context) (*bool, error) {
-	t := true
-	return &t, nil
+func (r *queryResolver) Live(ctx context.Context) (bool, error) {
+	return true, nil
 }
 
 // Mutation returns MutationResolver implementation.

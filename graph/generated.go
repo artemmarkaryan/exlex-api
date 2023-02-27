@@ -63,11 +63,11 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	RequestOtp(ctx context.Context, email string) (*model.Ok, error)
-	VerifyOtp(ctx context.Context, email string, otp string) (*model.Token, error)
+	RequestOtp(ctx context.Context, email string) (model.Ok, error)
+	VerifyOtp(ctx context.Context, email string, otp string) (model.Token, error)
 }
 type QueryResolver interface {
-	Live(ctx context.Context) (*bool, error)
+	Live(ctx context.Context) (bool, error)
 }
 
 type executableSchema struct {
@@ -333,9 +333,9 @@ func (ec *executionContext) _Mutation_requestOTP(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Ok)
+	res := resTmp.(model.Ok)
 	fc.Result = res
-	return ec.marshalNOk2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
+	return ec.marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_requestOTP(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -391,9 +391,9 @@ func (ec *executionContext) _Mutation_verifyOTP(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Token)
+	res := resTmp.(model.Token)
 	fc.Result = res
-	return ec.marshalNToken2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx, field.Selections, res)
+	return ec.marshalNToken2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_verifyOTP(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -488,11 +488,14 @@ func (ec *executionContext) _Query_live(ctx context.Context, field graphql.Colle
 		ec.Error(ctx, err)
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_live(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2949,16 +2952,6 @@ func (ec *executionContext) marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑb
 	return ec._Ok(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOk2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx context.Context, sel ast.SelectionSet, v *model.Ok) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Ok(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2976,16 +2969,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 
 func (ec *executionContext) marshalNToken2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx context.Context, sel ast.SelectionSet, v model.Token) graphql.Marshaler {
 	return ec._Token(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNToken2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx context.Context, sel ast.SelectionSet, v *model.Token) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Token(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

@@ -1,5 +1,5 @@
 type Query {
-    live: Boolean
+    live: Boolean!
 }
 
 type Mutation {

@@ -12,6 +12,8 @@ import (
 	"github.com/artemmarkaryan/exlex-backend/graph"
 	"github.com/artemmarkaryan/exlex-backend/internal/service"
 	"github.com/artemmarkaryan/exlex-backend/pkg/database"
+	"github.com/artemmarkaryan/exlex-backend/pkg/tokenizer"
+	"github.com/cristalhq/jwt/v5"
 	"github.com/go-chi/chi"
 )
 
@@ -22,6 +24,18 @@ func Serve(ctx context.Context) error {
 	if port == "" {
 		port = defaultPort
 	}
+
+	t, err := tokenizer.MakeTokenizer(
+		tokenizer.Config{
+			Algorithm: jwt.HS256,
+			SecretKey: os.Getenv("JWT_SECRET_KEY"),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("initing tokenizer: %w", err)
+	}
+
+	ctx = tokenizer.Propagate(ctx, t)
 
 	serviceContainer, err := service.MakeContainer(ctx)
 	if err != nil {
@@ -36,9 +50,11 @@ func Serve(ctx context.Context) error {
 	)
 
 	graphqlSchema := graph.NewExecutableSchema(
-		graph.Config{Resolvers: &graph.Resolver{
-			ServiceContainer: serviceContainer,
-		}},
+		graph.Config{
+			Resolvers: &graph.Resolver{
+				ServiceContainer: serviceContainer,
+			},
+		},
 	)
 
 	playgroundPath := "playground"
@@ -51,9 +67,11 @@ func Serve(ctx context.Context) error {
 
 func ContextPropagateMiddleware(ctx context.Context) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx = database.Propagate(r.Context(), database.C(ctx))
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
+		return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				ctx = database.Propagate(r.Context(), database.C(ctx))
+				next.ServeHTTP(w, r.WithContext(ctx))
+			},
+		)
 	}
 }

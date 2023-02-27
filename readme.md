@@ -32,3 +32,9 @@ $migration_name='migration_name'
 goose -dir=./internal/migrations create $migration_name go
 ```
 
+## Авторизация 
+
+Полученный token нужно отправлять в header'е Authorization
+```
+Authorization: Bearer <token>
+```

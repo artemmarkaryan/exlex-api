@@ -7,8 +7,6 @@ import (
 
 	"github.com/artemmarkaryan/exlex-backend/internal/service/authentication"
 	"github.com/artemmarkaryan/exlex-backend/internal/service/otp"
-	"github.com/artemmarkaryan/exlex-backend/pkg/tokenizer"
-	"github.com/cristalhq/jwt/v5"
 )
 
 type Container struct {
@@ -27,19 +25,7 @@ func MakeContainer(ctx context.Context) (c Container, err error) {
 		c.otp = otp.Make(otp.Config{UnioneToken: token})
 	}
 
-	{
-		cfg := authentication.Config{
-			TokenizerConfig: tokenizer.Config{
-				Algorithm: jwt.HS512,
-				SecretKey: os.Getenv("UNIONE_TOKEN"),
-			},
-		}
-
-		c.authentication, err = authentication.Make(ctx, cfg, c)
-		if err != nil {
-			return
-		}
-	}
+	c.authentication = authentication.Make(ctx, c)
 
 	return
 }

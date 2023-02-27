@@ -1,6 +1,7 @@
 package tokenizer
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -54,4 +55,18 @@ func (t Tokenizer) VerifyToken(token *jwt.Token) (err error) {
 
 func (t Tokenizer) Parse(raw []byte, claims *any) error {
 	return jwt.ParseClaims(raw, t.verifier, claims)
+}
+
+const tokenizerKey = "tokenizer"
+
+func Propagate(ctx context.Context, t Tokenizer) context.Context {
+	return context.WithValue(ctx, tokenizerKey, t)
+}
+
+func FromContext(ctx context.Context) Tokenizer {
+	t, ok := ctx.Value(tokenizerKey).(Tokenizer)
+	if !ok {
+		panic("no tokenizer in " + tokenizerKey)
+	}
+	return t
 }

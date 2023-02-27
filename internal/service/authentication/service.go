@@ -27,24 +27,16 @@ type tokenFactory interface {
 	Parse(raw []byte, claims *any) error
 }
 
-type Config struct {
-	TokenizerConfig tokenizer.Config
-}
-
 type Service struct {
 	repo
 	otpService   otpService
 	tokenFactory tokenFactory
 }
 
-func Make(_ context.Context, cfg Config, container serviceContainer) (s Service, err error) {
+func Make(ctx context.Context, container serviceContainer) (s Service) {
 	s.repo = repo{}
 	s.otpService = container.OTP()
-	s.tokenFactory, err = tokenizer.MakeTokenizer(cfg.TokenizerConfig)
-	if err != nil {
-		return
-	}
-
+	s.tokenFactory = tokenizer.FromContext(ctx)
 	return
 }
 
