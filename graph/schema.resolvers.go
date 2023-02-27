@@ -12,12 +12,12 @@ import (
 )
 
 // RequestOtp is the resolver for the requestOTP field.
-func (r *mutationResolver) RequestOtp(ctx context.Context, email string) (ok model.Ok, err error) {
+func (r *mutationResolver) RequestOtp(ctx context.Context, email string, debug bool) (ok model.Ok, err error) {
 	if _, err = mail.ParseAddress(email); err != nil {
 		return
 	}
 
-	err = r.ServiceContainer.Authentication().RequestOTP(ctx, email)
+	err = r.ServiceContainer.Authentication().RequestOTP(ctx, email, debug)
 	ok.Ok = err == nil
 	return
 }

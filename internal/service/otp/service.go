@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
 
+	"github.com/artemmarkaryan/exlex-backend/pkg/telegram"
 	"github.com/artemmarkaryan/exlex-backend/pkg/unione"
 	"github.com/google/uuid"
 )
@@ -32,7 +34,7 @@ func Make(cfg Config) (s Service) {
 	return
 }
 
-func (s Service) GenerateAndSend(ctx context.Context, id uuid.UUID, email string) error {
+func (s Service) GenerateAndSend(ctx context.Context, id uuid.UUID, email string, debug bool) error {
 	var code string
 	{
 		randomNumber := rand.Intn(10_000) + 10_000
@@ -45,18 +47,22 @@ func (s Service) GenerateAndSend(ctx context.Context, id uuid.UUID, email string
 		return err
 	}
 
-	err = s.unione.Send(
-		unione.Message{
-			Recipients: []unione.Recipient{{Email: email}},
-			Body: unione.Body{
-				Plaintext: "код подтверждения: " + code,
+	if debug {
+		log.Print("Code: ", code)
+		telegram.Report(ctx, fmt.Sprintf("code: %v", code))
+	} else {
+		err = s.unione.Send(
+			unione.Message{
+				Recipients: []unione.Recipient{{Email: email}},
+				Body: unione.Body{
+					Plaintext: "код подтверждения: " + code,
+				},
+				Subject:   "Код подтверждения ExLex",
+				FromEmail: "no-reply@exlex.site",
+				FromName:  "служебная почта ExLex",
 			},
-			Subject:   "Код подтверждения ExLex",
-			FromEmail: "no-reply@exlex.site",
-			FromName:  "служебная почта ExLex",
-		},
-	)
-
+		)
+	}
 	if err != nil {
 		log.Print("unione: " + err.Error())
 		return errors.New("sending message failed")

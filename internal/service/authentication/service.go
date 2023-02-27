@@ -17,7 +17,7 @@ type serviceContainer interface {
 }
 
 type otpService interface {
-	GenerateAndSend(ctx context.Context, uuid uuid.UUID, email string) error
+	GenerateAndSend(ctx context.Context, uuid uuid.UUID, email string, debug bool) error
 	Verify(ctx context.Context, email string, o string) error
 }
 
@@ -40,13 +40,13 @@ func Make(ctx context.Context, container serviceContainer) (s Service) {
 	return
 }
 
-func (s Service) RequestOTP(ctx context.Context, email string) (err error) {
+func (s Service) RequestOTP(ctx context.Context, email string, debug bool) (err error) {
 	id, err := s.getOrCreateUser(ctx, email)
 	if err != nil {
 		return err
 	}
 
-	if err = s.otpService.GenerateAndSend(ctx, id, email); err != nil {
+	if err = s.otpService.GenerateAndSend(ctx, id, email, debug); err != nil {
 		return err
 	}
 

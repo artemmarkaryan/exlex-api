@@ -45,7 +45,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		RequestOtp func(childComplexity int, email string) int
+		RequestOtp func(childComplexity int, email string, debug bool) int
 		VerifyOtp  func(childComplexity int, email string, otp string) int
 	}
 
@@ -63,7 +63,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	RequestOtp(ctx context.Context, email string) (model.Ok, error)
+	RequestOtp(ctx context.Context, email string, debug bool) (model.Ok, error)
 	VerifyOtp(ctx context.Context, email string, otp string) (model.Token, error)
 }
 type QueryResolver interface {
@@ -95,7 +95,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RequestOtp(childComplexity, args["email"].(string)), true
+		return e.complexity.Mutation.RequestOtp(childComplexity, args["email"].(string), args["debug"].(bool)), true
 
 	case "Mutation.verifyOTP":
 		if e.complexity.Mutation.VerifyOtp == nil {
@@ -228,6 +228,15 @@ func (ec *executionContext) field_Mutation_requestOTP_args(ctx context.Context, 
 		}
 	}
 	args["email"] = arg0
+	var arg1 bool
+	if tmp, ok := rawArgs["debug"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("debug"))
+		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["debug"] = arg1
 	return args, nil
 }
 
@@ -322,7 +331,7 @@ func (ec *executionContext) _Mutation_requestOTP(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RequestOtp(rctx, fc.Args["email"].(string))
+		return ec.resolvers.Mutation().RequestOtp(rctx, fc.Args["email"].(string), fc.Args["debug"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

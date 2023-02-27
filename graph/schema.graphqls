@@ -3,8 +3,15 @@ type Query {
 }
 
 type Mutation {
-    requestOTP(email: String!): Ok!
-    verifyOTP(email: String!, otp: String!): Token!
+    requestOTP(
+        email: String!,
+        debug: Boolean!
+    ): Ok!
+
+    verifyOTP(
+        email: String!,
+        otp: String!
+    ): Token!
 }
 
 type Ok {

@@ -12,6 +12,7 @@ import (
 	"github.com/artemmarkaryan/exlex-backend/graph"
 	"github.com/artemmarkaryan/exlex-backend/internal/service"
 	"github.com/artemmarkaryan/exlex-backend/pkg/database"
+	"github.com/artemmarkaryan/exlex-backend/pkg/telegram"
 	"github.com/artemmarkaryan/exlex-backend/pkg/tokenizer"
 	"github.com/cristalhq/jwt/v5"
 	"github.com/go-chi/chi"
@@ -19,23 +20,32 @@ import (
 
 const defaultPort = "8080"
 
-func Serve(ctx context.Context) error {
+func Serve(ctx context.Context) (err error) {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
 
-	t, err := tokenizer.MakeTokenizer(
-		tokenizer.Config{
-			Algorithm: jwt.HS256,
-			SecretKey: os.Getenv("JWT_SECRET_KEY"),
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("initing tokenizer: %w", err)
+	{
+		var t tokenizer.Tokenizer
+		if t, err = tokenizer.MakeTokenizer(
+			tokenizer.Config{
+				Algorithm: jwt.HS256,
+				SecretKey: os.Getenv("JWT_SECRET_KEY"),
+			},
+		); err != nil {
+			return fmt.Errorf("initing tokenizer: %w", err)
+		}
+
+		ctx = tokenizer.Propagate(ctx, t)
 	}
 
-	ctx = tokenizer.Propagate(ctx, t)
+	{
+		ctx, err = telegram.MakeBot(ctx, telegram.Config{Token: os.Getenv("TG_TOKEN")})
+		if err != nil {
+			return fmt.Errorf("initing Telegram bot: %w", err)
+		}
+	}
 
 	serviceContainer, err := service.MakeContainer(ctx)
 	if err != nil {
@@ -65,12 +75,16 @@ func Serve(ctx context.Context) error {
 	return http.ListenAndServe(":"+port, router)
 }
 
-func ContextPropagateMiddleware(ctx context.Context) func(handler http.Handler) http.Handler {
+func ContextPropagateMiddleware(parentCtx context.Context) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				ctx = database.Propagate(r.Context(), database.C(ctx))
-				next.ServeHTTP(w, r.WithContext(ctx))
+				var newCtx = r.Context()
+				newCtx = database.Propagate(newCtx, database.C(parentCtx))
+				newCtx = tokenizer.Propagate(newCtx, tokenizer.FromContext(parentCtx))
+				newCtx = telegram.Propagate(newCtx, telegram.FromContext(parentCtx))
+
+				next.ServeHTTP(w, r.WithContext(newCtx))
 			},
 		)
 	}

@@ -11,6 +11,7 @@ ssh root@178.21.10.214
 - `PSQL_DSN`
 - `UNIONE_TOKEN`
 - `JWT_SECRET_KEY`
+- `TG_TOKEN`
 
 ## Генерация ручек
 
