@@ -3,12 +3,12 @@ type Query {
 }
 
 type Mutation {
-    signup(form: SignUpForm!): Tokens
+    requestOTP(email: String!): Ok!
+    verifyOTP(email: String!, otp: String!): Tokens!
 }
 
-input SignUpForm {
-    login:    String!
-    password: String!
+type Ok {
+    ok: Boolean!
 }
 
 type Tokens {

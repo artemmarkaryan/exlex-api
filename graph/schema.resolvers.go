@@ -6,21 +6,35 @@ package graph
 
 import (
 	"context"
+	"fmt"
+	"net/mail"
 
 	"github.com/artemmarkaryan/exlex-backend/graph/model"
 )
 
-// Signup is the resolver for the signup field.
-func (r *mutationResolver) Signup(ctx context.Context, form model.SignUpForm) (*model.Tokens, error) {
-	_, err := r.ServiceContainer.Authentication().CreateUser(ctx, form.Login, form.Password)
+// RequestOtp is the resolver for the requestOTP field.
+func (r *mutationResolver) RequestOtp(ctx context.Context, email string) (*model.Ok, error) {
+	_, err := mail.ParseAddress(email)
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.Tokens{
-		Access:  "mock",
-		Refresh: "mock",
-	}, nil
+	err = r.ServiceContainer.Authentication().RequestOTP(ctx, email)
+	return &model.Ok{Ok: err == nil}, err
+}
+
+// VerifyOtp is the resolver for the verifyOTP field.
+func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp string) (*model.Tokens, error) {
+	_, err := mail.ParseAddress(email)
+	if err != nil {
+		return nil, err
+	}
+
+	panic(fmt.Errorf("not implemented: VerifyOtp - verifyOTP"))
+	// 	&model.Tokens{
+	//		Access:  t.Access,
+	//		Refresh: t.Refresh,
+	//	}, nil
 }
 
 // Live is the resolver for the live field.

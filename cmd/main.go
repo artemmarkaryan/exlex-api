@@ -8,6 +8,7 @@ import (
 	_ "github.com/artemmarkaryan/exlex-backend/internal/migrations"
 	"github.com/artemmarkaryan/exlex-backend/internal/server"
 	"github.com/artemmarkaryan/exlex-backend/pkg/database"
+	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 )
@@ -27,7 +28,7 @@ func main() {
 func connectDatabase(ctx context.Context) context.Context {
 	dsn := os.Getenv("PSQL_DSN")
 	if dsn == "" {
-		log.Fatalln("empty dsn")
+		log.Fatalln("PSQL_DSN is not set")
 	}
 
 	ctx = database.Propagate(ctx, database.Connect(ctx, dsn))

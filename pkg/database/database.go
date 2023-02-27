@@ -47,22 +47,107 @@ type Model interface{}
 
 var NotFound = errors.New("not found")
 
-func Getx[m Model](ctx context.Context, builder sq.SelectBuilder) (result m, err error) {
+type contextGetter interface {
+	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+}
+
+type contextExecer interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+func getX[m Model](ctx context.Context, c contextGetter, builder sq.SelectBuilder) (result m, err error) {
 	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
 		return
 	}
 
 	dst := new(m)
-	err = C(ctx).GetContext(ctx, dst, query, args...)
+	err = c.GetContext(ctx, dst, query, args...)
 	return *dst, err
 }
 
-func Execx(ctx context.Context, builder sq.InsertBuilder) (sql.Result, error) {
+func GetX[m Model](ctx context.Context, builder sq.SelectBuilder) (result m, err error) {
+	return getX[m](ctx, C(ctx), builder)
+}
+
+func GetTxX[m Model](ctx context.Context, tx *sqlx.Tx, builder sq.SelectBuilder) (result m, err error) {
+	return getX[m](ctx, tx, builder)
+}
+
+func getFromInsertX[m Model](ctx context.Context, c contextGetter, builder sq.InsertBuilder) (result m, err error) {
+	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return
+	}
+
+	dst := new(m)
+	err = c.GetContext(ctx, dst, query, args...)
+	return *dst, err
+}
+
+func GetFromInsertX[m Model](ctx context.Context, builder sq.InsertBuilder) (result m, err error) {
+	return getFromInsertX[m](ctx, C(ctx), builder)
+}
+
+func GetFromInsertTxX[m Model](ctx context.Context, tx *sqlx.Tx, builder sq.InsertBuilder) (result m, err error) {
+	return getFromInsertX[m](ctx, tx, builder)
+}
+
+func insertX(ctx context.Context, c contextExecer, builder sq.InsertBuilder) (sql.Result, error) {
 	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	return C(ctx).ExecContext(ctx, query, args...)
+	return c.ExecContext(ctx, query, args...)
+}
+
+func InsertX(ctx context.Context, builder sq.InsertBuilder) (sql.Result, error) {
+	return insertX(ctx, C(ctx), builder)
+}
+
+func InsertTxX(ctx context.Context, tx *sqlx.Tx, builder sq.InsertBuilder) (sql.Result, error) {
+	return insertX(ctx, tx, builder)
+}
+
+func deleteX(ctx context.Context, c contextExecer, builder sq.DeleteBuilder) (sql.Result, error) {
+	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	return c.ExecContext(ctx, query, args...)
+}
+
+func DeleteX(ctx context.Context, builder sq.DeleteBuilder) (sql.Result, error) {
+	return deleteX(ctx, C(ctx), builder)
+}
+
+func DeleteTxX(ctx context.Context, tx *sqlx.Tx, builder sq.DeleteBuilder) (sql.Result, error) {
+	return deleteX(ctx, tx, builder)
+}
+
+func DefaultTxOptions() *sql.TxOptions {
+	return &sql.TxOptions{
+		Isolation: sql.LevelDefault,
+		ReadOnly:  false,
+	}
+}
+
+func Tx(ctx context.Context, opts *sql.TxOptions, f ...func(tx *sqlx.Tx) error) error {
+	tx, err := C(ctx).BeginTxx(ctx, opts)
+	if err != nil {
+		return err
+	}
+
+	defer func() { _ = tx.Rollback() }()
+
+	for _, ff := range f {
+		err = ff(tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

@@ -2,9 +2,8 @@
 
 package model
 
-type SignUpForm struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+type Ok struct {
+	Ok bool `json:"ok"`
 }
 
 type Tokens struct {
