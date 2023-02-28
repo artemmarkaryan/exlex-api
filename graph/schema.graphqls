@@ -1,22 +1,30 @@
-directive @authorized on FIELD_DEFINITION
+directive @authenticated on FIELD_DEFINITION
+directive @role(role: Role) on FIELD_DEFINITION
 
 type Query {
     live: Boolean!
-    authorized: Boolean! @authorized
+    authorized: Boolean! @authenticated
+
+    specialities: [Speciality!]!
+    educationTypes: [EducationType!]!
 }
 
 type Mutation {
-    login(data: loginData!): Ok!
-    signup(data: signupData!): Ok!
+    login(data: LoginData!): Ok!
+    signup(data: SignupData!): Ok!
     verifyOTP(email: String!, otp: String!): Token!
+
+    # todo
+    setCustomerProfile(data: SetCustomerProfileData!): Ok!  @role(role: CUSTOMER) @authenticated
+    setExecutorProfile(data: SetExecutorProfileData!): Ok!  @role(role: EXECUTOR) @authenticated
 }
 
-input loginData {
-    email: String!
-    debug: Boolean!
+input LoginData {
+    Email: String!
+    Debug: Boolean!
 }
 
-input signupData {
+input SignupData {
     email: String!
     role: Role!
     debug: Boolean!
@@ -33,4 +41,25 @@ type Token {
 enum Role {
     EXECUTOR
     CUSTOMER
+}
+
+input SetCustomerProfileData {
+    fullName: String
+}
+
+input SetExecutorProfileData {
+    fullName: String
+    workExperience: Int
+    educationTypeID: ID
+    specialization: [ID]
+}
+
+type Speciality {
+    id: ID!
+    title: String!
+}
+
+type EducationType {
+    id: ID!
+    title: String!
 }

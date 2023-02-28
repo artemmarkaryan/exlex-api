@@ -86,7 +86,17 @@ func (s Service) VerifyOTP(ctx context.Context, email string, o string) (token s
 		return
 	}
 
-	t, err := s.tokenFactory.NewToken(auth.MakeClaim(user.ID, user.Email))
+	q = sq.
+		Select("role").
+		From(new(schema.UserRole).TableName()).
+		Where(sq.Eq{"user_id": user.ID})
+	role, err := database.GetX[schema.UserRole](ctx, q)
+	if err != nil {
+		return
+	}
+
+	claim := auth.MakeClaim(user.ID, user.Email, role.Role)
+	t, err := s.tokenFactory.NewToken(claim)
 	if err != nil {
 		return
 	}

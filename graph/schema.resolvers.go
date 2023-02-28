@@ -6,11 +6,13 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"net/mail"
 
 	"github.com/artemmarkaryan/exlex-backend/graph/model"
 	"github.com/artemmarkaryan/exlex-backend/internal/auth"
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
+	"github.com/samber/lo"
 )
 
 // Login is the resolver for the login field.
@@ -47,6 +49,22 @@ func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp stri
 	return
 }
 
+// SetCustomerProfile is the resolver for the SetCustomerProfile field.
+func (r *mutationResolver) SetCustomerProfile(ctx context.Context, data model.SetCustomerProfileData) (
+	model.Ok,
+	error,
+) {
+	panic(fmt.Errorf("not implemented: SetCustomerProfile - SetCustomerProfile"))
+}
+
+// SetExecutorProfile is the resolver for the SetExecutorProfile field.
+func (r *mutationResolver) SetExecutorProfile(ctx context.Context, data model.SetExecutorProfileData) (
+	model.Ok,
+	error,
+) {
+	panic(fmt.Errorf("not implemented: SetExecutorProfile - SetExecutorProfile"))
+}
+
 // Live is the resolver for the live field.
 func (r *queryResolver) Live(ctx context.Context) (bool, error) {
 	return true, nil
@@ -56,6 +74,40 @@ func (r *queryResolver) Live(ctx context.Context) (bool, error) {
 func (r *queryResolver) Authorized(ctx context.Context) (bool, error) {
 	_, err := auth.FromContext(ctx)
 	return err != auth.ErrUnauthenticated, err
+}
+
+// Specialities is the resolver for the specialities field.
+func (r *queryResolver) Specialities(ctx context.Context) ([]model.Speciality, error) {
+	s, err := r.ServiceContainer.UserProfile().Specialities(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	f := func(o schema.Speciality, _ int) model.Speciality {
+		return model.Speciality{
+			ID:    o.ID,
+			Title: o.Title,
+		}
+	}
+
+	return lo.Map(s, f), nil
+}
+
+// EducationTypes is the resolver for the educationTypes field.
+func (r *queryResolver) EducationTypes(ctx context.Context) ([]model.EducationType, error) {
+	s, err := r.ServiceContainer.UserProfile().EducationTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	f := func(o schema.EducationType, _ int) model.EducationType {
+		return model.EducationType{
+			ID:    o.ID,
+			Title: o.Title,
+		}
+	}
+
+	return lo.Map(s, f), nil
 }
 
 // Mutation returns MutationResolver implementation.

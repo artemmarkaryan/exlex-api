@@ -7,11 +7,13 @@ import (
 
 	"github.com/artemmarkaryan/exlex-backend/internal/service/authentication"
 	"github.com/artemmarkaryan/exlex-backend/internal/service/otp"
+	user_profile "github.com/artemmarkaryan/exlex-backend/internal/service/user-profile"
 )
 
 type Container struct {
 	authentication authentication.Service
 	otp            otp.Service
+	userProfile    user_profile.Service
 }
 
 func MakeContainer(ctx context.Context) (c Container, err error) {
@@ -26,9 +28,11 @@ func MakeContainer(ctx context.Context) (c Container, err error) {
 	}
 
 	c.authentication = authentication.Make(ctx, c)
+	c.userProfile = user_profile.MakeService()
 
 	return
 }
 
 func (c Container) Authentication() authentication.Service { return c.authentication }
 func (c Container) OTP() otp.Service                       { return c.otp }
+func (c Container) UserProfile() user_profile.Service      { return c.userProfile }

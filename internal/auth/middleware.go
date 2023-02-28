@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/artemmarkaryan/exlex-backend/graph/model"
+	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/artemmarkaryan/exlex-backend/pkg/tokenizer"
 	"github.com/cristalhq/jwt/v5"
 )
@@ -25,7 +27,14 @@ func Middleware(next http.Handler) http.Handler {
 
 const keyClaim = "auth_claim"
 
-func DirectiveAuthorized(ctx context.Context, _ interface{}, next graphql.Resolver) (res interface{}, err error) {
+func DirectiveAuthenticated(
+	ctx context.Context,
+	_ interface{},
+	next graphql.Resolver,
+) (
+	res interface{},
+	err error,
+) {
 	rawToken, ok := ctx.Value(keyToken).(string)
 	if !ok || rawToken == "" {
 		return nil, ErrUnauthenticated
@@ -51,6 +60,32 @@ func DirectiveAuthorized(ctx context.Context, _ interface{}, next graphql.Resolv
 	}
 
 	return next(context.WithValue(ctx, keyClaim, claim))
+}
+
+func DirectiveRole(
+	ctx context.Context,
+	_ interface{},
+	next graphql.Resolver,
+	role *model.Role,
+) (
+	res interface{},
+	err error,
+) {
+	claim, err := FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	requiredRole, err := schema.MapRole(*role)
+	if err != nil {
+		return nil, err
+	}
+
+	if requiredRole != claim.Role {
+		return nil, ErrUnauthorized
+	}
+
+	return next(ctx)
 }
 
 func FromContext(ctx context.Context) (Claim, error) {

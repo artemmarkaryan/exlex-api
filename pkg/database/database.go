@@ -51,8 +51,30 @@ type contextGetter interface {
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 }
 
+type contextSelecter interface {
+	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+}
+
 type contextExecer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+func selectX[m Model](ctx context.Context, c contextSelecter, builder sq.SelectBuilder) (result []m, err error) {
+	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return
+	}
+
+	err = c.SelectContext(ctx, &result, query, args...)
+	return
+}
+
+func SelectX[m Model](ctx context.Context, b sq.SelectBuilder) (result []m, err error) {
+	return selectX[m](ctx, C(ctx), b)
+}
+
+func SelectTxX[m Model](ctx context.Context, tx *sqlx.Tx, b sq.SelectBuilder) (result []m, err error) {
+	return selectX[m](ctx, tx, b)
 }
 
 func getX[m Model](ctx context.Context, c contextGetter, builder sq.SelectBuilder) (result m, err error) {
@@ -61,9 +83,8 @@ func getX[m Model](ctx context.Context, c contextGetter, builder sq.SelectBuilde
 		return
 	}
 
-	dst := new(m)
-	err = c.GetContext(ctx, dst, query, args...)
-	return *dst, err
+	err = c.GetContext(ctx, &result, query, args...)
+	return
 }
 
 func GetX[m Model](ctx context.Context, builder sq.SelectBuilder) (result m, err error) {

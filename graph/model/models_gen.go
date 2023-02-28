@@ -8,23 +8,44 @@ import (
 	"strconv"
 )
 
+type EducationType struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+}
+
+type LoginData struct {
+	Email string `json:"Email"`
+	Debug bool   `json:"Debug"`
+}
+
 type Ok struct {
 	Ok bool `json:"ok"`
 }
 
-type Token struct {
-	Access string `json:"access"`
+type SetCustomerProfileData struct {
+	FullName *string `json:"fullName"`
 }
 
-type LoginData struct {
-	Email string `json:"email"`
-	Debug bool   `json:"debug"`
+type SetExecutorProfileData struct {
+	FullName        *string   `json:"fullName"`
+	WorkExperience  *int      `json:"workExperience"`
+	EducationTypeID *string   `json:"educationTypeID"`
+	Specialization  []*string `json:"specialization"`
 }
 
 type SignupData struct {
 	Email string `json:"email"`
 	Role  Role   `json:"role"`
 	Debug bool   `json:"debug"`
+}
+
+type Speciality struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+}
+
+type Token struct {
+	Access string `json:"access"`
 }
 
 type Role string

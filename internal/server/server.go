@@ -61,7 +61,8 @@ func Serve(ctx context.Context) (err error) {
 	)
 
 	config := graph.Config{Resolvers: &graph.Resolver{ServiceContainer: serviceContainer}}
-	config.Directives.Authorized = auth.DirectiveAuthorized
+	config.Directives.Authenticated = auth.DirectiveAuthenticated
+	config.Directives.Role = auth.DirectiveRole
 
 	playgroundPath := "playground"
 	router.Handle("/"+playgroundPath, playground.Handler("playground", "/query"))
