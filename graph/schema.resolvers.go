@@ -6,12 +6,12 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"net/mail"
 
 	"github.com/artemmarkaryan/exlex-backend/graph/model"
 	"github.com/artemmarkaryan/exlex-backend/internal/auth"
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
+	user_profile "github.com/artemmarkaryan/exlex-backend/internal/service/user-profile"
 	"github.com/samber/lo"
 )
 
@@ -54,7 +54,20 @@ func (r *mutationResolver) SetCustomerProfile(ctx context.Context, data model.Se
 	model.Ok,
 	error,
 ) {
-	panic(fmt.Errorf("not implemented: SetCustomerProfile - SetCustomerProfile"))
+	c, err := auth.FromContext(ctx)
+	if err != nil {
+		return model.Ok{}, err
+	}
+
+	updateData := user_profile.UpdateCustomerProfileData{}
+	updateData.UserUUID = c.UserID
+	updateData.Name = data.FullName
+
+	err = r.ServiceContainer.
+		UserProfile().
+		UpdateCustomerProfile(ctx, updateData)
+
+	return model.Ok{Ok: err == nil}, err
 }
 
 // SetExecutorProfile is the resolver for the SetExecutorProfile field.
@@ -62,7 +75,20 @@ func (r *mutationResolver) SetExecutorProfile(ctx context.Context, data model.Se
 	model.Ok,
 	error,
 ) {
-	panic(fmt.Errorf("not implemented: SetExecutorProfile - SetExecutorProfile"))
+	c, err := auth.FromContext(ctx)
+	if err != nil {
+		return model.Ok{}, err
+	}
+
+	updateData := user_profile.UpdateExecutorProfileData{}
+	updateData.UserUUID = c.UserID
+	updateData.FullName = data.FullName
+	updateData.Education = data.EducationTypeID
+	updateData.Specialities = data.Specialization
+	updateData.ExperienceYears = data.WorkExperience
+
+	err = r.ServiceContainer.UserProfile().UpdateExecutorProfile(ctx, updateData)
+	return model.Ok{Ok: err == nil}, err
 }
 
 // Live is the resolver for the live field.

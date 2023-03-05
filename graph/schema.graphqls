@@ -51,7 +51,7 @@ input SetExecutorProfileData {
     fullName: String
     workExperience: Int
     educationTypeID: ID
-    specialization: [ID]
+    specialization: [ID!]
 }
 
 type Speciality {

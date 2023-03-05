@@ -7,20 +7,25 @@ import (
 	"log"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
+	sqldblogger "github.com/simukti/sqldb-logger"
 )
 
 const key = "database-connection"
+
+type logger struct{}
+
+func (l logger) Log(_ context.Context, _ sqldblogger.Level, msg string, data map[string]interface{}) {
+	log.Println("[DB]", msg, data)
+}
 
 func Connect(ctx context.Context, dsn string) *sqlx.DB {
 	if db, ok := ctx.Value(key).(*sqlx.DB); ok {
 		return db
 	}
 
-	db, err := sqlx.Connect("postgres", dsn)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	db := sqlx.NewDb(sqldblogger.OpenDriver(dsn, stdlib.GetDefaultDriver(), logger{}), "postgres")
 
 	go func() {
 		for {
@@ -146,6 +151,23 @@ func DeleteX(ctx context.Context, builder sq.DeleteBuilder) (sql.Result, error) 
 
 func DeleteTxX(ctx context.Context, tx *sqlx.Tx, builder sq.DeleteBuilder) (sql.Result, error) {
 	return deleteX(ctx, tx, builder)
+}
+
+func updateX(ctx context.Context, c contextExecer, builder sq.UpdateBuilder) (sql.Result, error) {
+	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	return c.ExecContext(ctx, query, args...)
+}
+
+func UpdateX(ctx context.Context, builder sq.UpdateBuilder) (sql.Result, error) {
+	return updateX(ctx, C(ctx), builder)
+}
+
+func UpdateTxX(ctx context.Context, tx *sqlx.Tx, builder sq.UpdateBuilder) (sql.Result, error) {
+	return updateX(ctx, tx, builder)
 }
 
 func DefaultTxOptions() *sql.TxOptions {

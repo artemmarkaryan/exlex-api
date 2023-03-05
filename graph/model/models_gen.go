@@ -27,10 +27,10 @@ type SetCustomerProfileData struct {
 }
 
 type SetExecutorProfileData struct {
-	FullName        *string   `json:"fullName"`
-	WorkExperience  *int      `json:"workExperience"`
-	EducationTypeID *string   `json:"educationTypeID"`
-	Specialization  []*string `json:"specialization"`
+	FullName        *string  `json:"fullName"`
+	WorkExperience  *int     `json:"workExperience"`
+	EducationTypeID *string  `json:"educationTypeID"`
+	Specialization  []string `json:"specialization"`
 }
 
 type SignupData struct {

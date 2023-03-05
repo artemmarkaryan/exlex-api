@@ -1,27 +1,8 @@
 package schema
 
 import (
-	"encoding/json"
-	"time"
-
 	"github.com/google/uuid"
 )
-
-type MetadataKey string
-
-const (
-	MetadataKeyFullName       MetadataKey = "fullname"
-	MetadataKeyWorkExperience MetadataKey = "work_experience"
-)
-
-type UserMetadata struct {
-	UserUUID  uuid.UUID       `db:"user_uuid"`
-	Metadata  json.RawMessage `db:"metadata"`
-	CreatedAt time.Time       `db:"created_at"`
-	UpdatedAt time.Time       `db:"updated_at"`
-}
-
-func (UserMetadata) TableName() string { return "user_metadata" }
 
 type Speciality struct {
 	ID    string `db:"id"`
@@ -44,9 +25,18 @@ type UserSpeciality struct {
 
 func (UserSpeciality) TableName() string { return "user_speciality" }
 
-type UserEducation struct {
-	UserUUID  uuid.UUID `db:"user_uuid"`
-	Education string    `db:"education"`
+type CustomerMetadata struct {
+	UserUUID uuid.UUID `db:"user_uuid"`
+	Name     string    `db:"name"`
 }
 
-func (UserEducation) TableName() string { return "user_education" }
+func (CustomerMetadata) TableName() string { return "customer_metadata" }
+
+type ExecutorMetadata struct {
+	UserUUID        uuid.UUID `db:"user_uuid"`
+	FullName        string    `db:"full_name"`
+	ExperienceYears int       `db:"experience_years"`
+	Education       string    `db:"education"`
+}
+
+func (ExecutorMetadata) TableName() string { return "executor_metadata" }
