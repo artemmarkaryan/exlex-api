@@ -195,21 +195,26 @@ func (r *queryResolver) Search(ctx context.Context, id string) (model.Search, er
 
 	s, err := r.ServiceContainer.Search().Get(ctx, claims.UserID, searchID)
 
-	return model.Search{
+	response := model.Search{
 		Title:       s.Name,
 		Description: s.Description,
 		Price:       s.Price,
-		Deadline: &model.Date{
-			Year:  s.Deadline.Year(),
-			Month: int(s.Deadline.Month()),
-			Day:   s.Deadline.Day(),
-		},
 		Requirements: &model.SearchRequirements{
 			Speciality:     s.RequiredSpecialities,
 			EducationType:  s.RequiredEducation,
 			WorkExperience: s.RequiredWorkExperience,
 		},
-	}, nil
+	}
+
+	if s.Deadline != nil {
+		response.Deadline = &model.Date{
+			Year:  s.Deadline.Year(),
+			Month: int(s.Deadline.Month()),
+			Day:   s.Deadline.Day(),
+		}
+	}
+
+	return response, nil
 }
 
 // Searches is the resolver for the searches field.
