@@ -8,6 +8,26 @@ import (
 	"strconv"
 )
 
+type CreateSearchInput struct {
+	Title        string                   `json:"title"`
+	Description  string                   `json:"description"`
+	Price        float64                  `json:"price"`
+	Deadline     *DateInput               `json:"deadline"`
+	Requirements *SearchRequirementsInput `json:"requirements"`
+}
+
+type Date struct {
+	Year  int `json:"year"`
+	Month int `json:"month"`
+	Day   int `json:"day"`
+}
+
+type DateInput struct {
+	Year  int `json:"year"`
+	Month int `json:"month"`
+	Day   int `json:"day"`
+}
+
 type EducationType struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
@@ -20,6 +40,26 @@ type LoginData struct {
 
 type Ok struct {
 	Ok bool `json:"ok"`
+}
+
+type Search struct {
+	Title        string              `json:"title"`
+	Description  string              `json:"description"`
+	Price        float64             `json:"price"`
+	Deadline     *Date               `json:"deadline"`
+	Requirements *SearchRequirements `json:"requirements"`
+}
+
+type SearchRequirements struct {
+	Speciality     []string `json:"speciality"`
+	EducationType  []string `json:"education_type"`
+	WorkExperience int      `json:"work_experience"`
+}
+
+type SearchRequirementsInput struct {
+	Speciality     []string `json:"speciality"`
+	EducationType  []string `json:"education_type"`
+	WorkExperience int      `json:"work_experience"`
 }
 
 type SetCustomerProfileData struct {

@@ -3,10 +3,13 @@ directive @role(role: Role) on FIELD_DEFINITION
 
 type Query {
     live: Boolean!
-    authorized: Boolean! @authenticated
+    authenticated: Boolean! @authenticated
 
     specialities: [Speciality!]!
     educationTypes: [EducationType!]!
+
+    search(id: ID!): Search! @role(role: CUSTOMER) @authenticated
+    searches: [Search]! @role(role: CUSTOMER) @authenticated
 }
 
 type Mutation {
@@ -14,9 +17,11 @@ type Mutation {
     signup(data: SignupData!): Ok!
     verifyOTP(email: String!, otp: String!): Token!
 
-    # todo
     setCustomerProfile(data: SetCustomerProfileData!): Ok!  @role(role: CUSTOMER) @authenticated
     setExecutorProfile(data: SetExecutorProfileData!): Ok!  @role(role: EXECUTOR) @authenticated
+
+    createSearch(data: CreateSearchInput!): ID! @role(role:CUSTOMER) @authenticated
+    deleteSearch(id: ID!): Ok! @role(role:CUSTOMER) @authenticated
 }
 
 input LoginData {
@@ -62,4 +67,44 @@ type Speciality {
 type EducationType {
     id: ID!
     title: String!
+}
+
+input DateInput {
+    year: Int!
+    month: Int!
+    day: Int!
+}
+
+type Date {
+    year: Int!
+    month: Int!
+    day: Int!
+}
+
+input SearchRequirementsInput {
+    speciality: [ID!]!
+    education_type: [ID!]!
+    work_experience: Int!
+}
+
+type SearchRequirements {
+    speciality: [ID!]!
+    education_type: [ID!]!
+    work_experience: Int!
+}
+
+input CreateSearchInput {
+    title: String!
+    description: String!
+    price: Float!
+    deadline: DateInput!
+    requirements: SearchRequirementsInput!
+}
+
+type Search {
+    title: String!
+    description: String!
+    price: Float!
+    deadline: Date!
+    requirements: SearchRequirements!
 }

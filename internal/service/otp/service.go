@@ -35,40 +35,40 @@ func Make(cfg Config) (s Service) {
 }
 
 func (s Service) GenerateAndSend(ctx context.Context, id uuid.UUID, email string, debug bool) error {
-	var code string
-	{
-		randomNumber := rand.Intn(10_000) + 10_000
-		randomString := strconv.Itoa(randomNumber)
-		code = randomString[1:]
-	}
+	code := generateOTP()
 
-	err := s.repo.insert(ctx, id, code)
-	if err != nil {
+	if err := s.repo.insert(ctx, id, code); err != nil {
 		return err
 	}
 
 	if debug {
-		log.Print("[debug] confirmation otp: ", code)
-		telegram.Report(ctx, fmt.Sprintf("code: %v", code))
-	} else {
-		err = s.unione.Send(
-			unione.Message{
-				Recipients: []unione.Recipient{{Email: email}},
-				Body: unione.Body{
-					Plaintext: "код подтверждения: " + code,
-				},
-				Subject:   "Код подтверждения ExLex",
-				FromEmail: "no-reply@exlex.site",
-				FromName:  "служебная почта ExLex",
-			},
-		)
+		log.Printf("[debug] confirmation otp: %s", code)
+		telegram.Report(ctx, fmt.Sprintf("code: %s", code))
+		return nil
 	}
+
+	err := s.unione.Send(
+		unione.Message{
+			Recipients: []unione.Recipient{{Email: email}},
+			Body: unione.Body{
+				Plaintext: "код подтверждения: " + code,
+			},
+			Subject:   "Код подтверждения ExLex",
+			FromEmail: "no-reply@exlex.site",
+			FromName:  "служебная почта ExLex",
+		},
+	)
 	if err != nil {
-		log.Print("unione: " + err.Error())
+		log.Printf("unione: %v", err)
 		return errors.New("sending message failed")
 	}
 
 	return nil
+}
+
+func generateOTP() string {
+	randomNumber := rand.Intn(9000) + 1000
+	return strconv.Itoa(randomNumber)
 }
 
 func (s Service) Verify(ctx context.Context, email string, input string) error {
