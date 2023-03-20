@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	_ "github.com/artemmarkaryan/exlex-backend/internal/migrations"
 	"github.com/artemmarkaryan/exlex-backend/internal/server"
@@ -16,6 +18,21 @@ import (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	{
+		sigc := make(chan os.Signal, 1)
+		signal.Notify(
+			sigc,
+			syscall.SIGHUP,
+			syscall.SIGINT,
+			syscall.SIGTERM,
+			syscall.SIGQUIT,
+		)
+		go func() {
+			<-sigc
+			cancel()
+		}()
+	}
 
 	ctx = connectDatabase(ctx)
 	if err := server.Serve(ctx); err != nil {
