@@ -2,10 +2,13 @@ package user_profile
 
 import (
 	"context"
+	"errors"
 
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/google/uuid"
 )
+
+var ErrUserNotFound = errors.New("user not found")
 
 type Service struct {
 	repo repo
@@ -59,4 +62,19 @@ func (s Service) UpdateExecutorProfile(ctx context.Context, d UpdateExecutorProf
 	}
 
 	return nil
+}
+
+type CustomerProfile struct {
+	FullName string
+}
+
+func (s Service) GetCustomerProfile(ctx context.Context, id uuid.UUID) (CustomerProfile, error) {
+	cp, err := s.repo.getCustomerProfile(ctx, id)
+	if err != nil {
+		return CustomerProfile{}, err
+	}
+
+	return CustomerProfile{
+		FullName: cp.Name,
+	}, nil
 }

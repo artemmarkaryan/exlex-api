@@ -46,6 +46,10 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Customer struct {
+		FullName func(childComplexity int) int
+	}
+
 	Date struct {
 		Day   func(childComplexity int) int
 		Month func(childComplexity int) int
@@ -60,19 +64,16 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateSearch       func(childComplexity int, data model.CreateSearchInput) int
 		DeleteSearch       func(childComplexity int, id string) int
-		Login              func(childComplexity int, data model.LoginData) int
+		Login              func(childComplexity int, email string, debug bool) int
 		SetCustomerProfile func(childComplexity int, data model.SetCustomerProfileData) int
 		SetExecutorProfile func(childComplexity int, data model.SetExecutorProfileData) int
-		Signup             func(childComplexity int, data model.SignupData) int
+		Signup             func(childComplexity int, email string, role model.Role, debug bool) int
 		VerifyOtp          func(childComplexity int, email string, otp string) int
-	}
-
-	Ok struct {
-		Ok func(childComplexity int) int
 	}
 
 	Query struct {
 		Authenticated  func(childComplexity int) int
+		Customer       func(childComplexity int, id string) int
 		EducationTypes func(childComplexity int) int
 		Live           func(childComplexity int) int
 		Search         func(childComplexity int, id string) int
@@ -98,20 +99,16 @@ type ComplexityRoot struct {
 		ID    func(childComplexity int) int
 		Title func(childComplexity int) int
 	}
-
-	Token struct {
-		Access func(childComplexity int) int
-	}
 }
 
 type MutationResolver interface {
-	Login(ctx context.Context, data model.LoginData) (model.Ok, error)
-	Signup(ctx context.Context, data model.SignupData) (model.Ok, error)
-	VerifyOtp(ctx context.Context, email string, otp string) (model.Token, error)
-	SetCustomerProfile(ctx context.Context, data model.SetCustomerProfileData) (model.Ok, error)
-	SetExecutorProfile(ctx context.Context, data model.SetExecutorProfileData) (model.Ok, error)
+	Login(ctx context.Context, email string, debug bool) (bool, error)
+	Signup(ctx context.Context, email string, role model.Role, debug bool) (bool, error)
+	VerifyOtp(ctx context.Context, email string, otp string) (string, error)
+	SetCustomerProfile(ctx context.Context, data model.SetCustomerProfileData) (bool, error)
+	SetExecutorProfile(ctx context.Context, data model.SetExecutorProfileData) (bool, error)
 	CreateSearch(ctx context.Context, data model.CreateSearchInput) (string, error)
-	DeleteSearch(ctx context.Context, id string) (model.Ok, error)
+	DeleteSearch(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	Live(ctx context.Context) (bool, error)
@@ -120,6 +117,7 @@ type QueryResolver interface {
 	EducationTypes(ctx context.Context) ([]model.EducationType, error)
 	Search(ctx context.Context, id string) (model.Search, error)
 	Searches(ctx context.Context) ([]*model.Search, error)
+	Customer(ctx context.Context, id string) (model.Customer, error)
 }
 
 type executableSchema struct {
@@ -136,6 +134,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Customer.fullName":
+		if e.complexity.Customer.FullName == nil {
+			break
+		}
+
+		return e.complexity.Customer.FullName(childComplexity), true
 
 	case "Date.day":
 		if e.complexity.Date.Day == nil {
@@ -206,7 +211,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Login(childComplexity, args["data"].(model.LoginData)), true
+		return e.complexity.Mutation.Login(childComplexity, args["email"].(string), args["debug"].(bool)), true
 
 	case "Mutation.setCustomerProfile":
 		if e.complexity.Mutation.SetCustomerProfile == nil {
@@ -242,7 +247,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Signup(childComplexity, args["data"].(model.SignupData)), true
+		return e.complexity.Mutation.Signup(childComplexity, args["email"].(string), args["role"].(model.Role), args["debug"].(bool)), true
 
 	case "Mutation.verifyOTP":
 		if e.complexity.Mutation.VerifyOtp == nil {
@@ -256,19 +261,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.VerifyOtp(childComplexity, args["email"].(string), args["otp"].(string)), true
 
-	case "Ok.ok":
-		if e.complexity.Ok.Ok == nil {
-			break
-		}
-
-		return e.complexity.Ok.Ok(childComplexity), true
-
 	case "Query.authenticated":
 		if e.complexity.Query.Authenticated == nil {
 			break
 		}
 
 		return e.complexity.Query.Authenticated(childComplexity), true
+
+	case "Query.customer":
+		if e.complexity.Query.Customer == nil {
+			break
+		}
+
+		args, err := ec.field_Query_customer_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Customer(childComplexity, args["id"].(string)), true
 
 	case "Query.educationTypes":
 		if e.complexity.Query.EducationTypes == nil {
@@ -380,13 +390,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Speciality.Title(childComplexity), true
 
-	case "Token.access":
-		if e.complexity.Token.Access == nil {
-			break
-		}
-
-		return e.complexity.Token.Access(childComplexity), true
-
 	}
 	return 0, false
 }
@@ -397,11 +400,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCreateSearchInput,
 		ec.unmarshalInputDateInput,
-		ec.unmarshalInputLoginData,
 		ec.unmarshalInputSearchRequirementsInput,
 		ec.unmarshalInputSetCustomerProfileData,
 		ec.unmarshalInputSetExecutorProfileData,
-		ec.unmarshalInputSignupData,
 	)
 	first := true
 
@@ -529,15 +530,24 @@ func (ec *executionContext) field_Mutation_deleteSearch_args(ctx context.Context
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.LoginData
-	if tmp, ok := rawArgs["data"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-		arg0, err = ec.unmarshalNLoginData2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐLoginData(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["data"] = arg0
+	args["email"] = arg0
+	var arg1 bool
+	if tmp, ok := rawArgs["debug"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("debug"))
+		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["debug"] = arg1
 	return args, nil
 }
 
@@ -574,15 +584,33 @@ func (ec *executionContext) field_Mutation_setExecutorProfile_args(ctx context.C
 func (ec *executionContext) field_Mutation_signup_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.SignupData
-	if tmp, ok := rawArgs["data"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-		arg0, err = ec.unmarshalNSignupData2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐSignupData(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["data"] = arg0
+	args["email"] = arg0
+	var arg1 model.Role
+	if tmp, ok := rawArgs["role"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
+		arg1, err = ec.unmarshalNRole2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["role"] = arg1
+	var arg2 bool
+	if tmp, ok := rawArgs["debug"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("debug"))
+		arg2, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["debug"] = arg2
 	return args, nil
 }
 
@@ -622,6 +650,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_customer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -677,6 +720,50 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _Customer_fullName(ctx context.Context, field graphql.CollectedField, obj *model.Customer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Customer_fullName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FullName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Customer_fullName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Customer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Date_year(ctx context.Context, field graphql.CollectedField, obj *model.Date) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Date_year(ctx, field)
@@ -912,7 +999,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Login(rctx, fc.Args["data"].(model.LoginData))
+		return ec.resolvers.Mutation().Login(rctx, fc.Args["email"].(string), fc.Args["debug"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -923,9 +1010,9 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.Ok)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -935,11 +1022,7 @@ func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, fie
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ok":
-				return ec.fieldContext_Ok_ok(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Ok", field.Name)
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	defer func() {
@@ -970,7 +1053,7 @@ func (ec *executionContext) _Mutation_signup(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Signup(rctx, fc.Args["data"].(model.SignupData))
+		return ec.resolvers.Mutation().Signup(rctx, fc.Args["email"].(string), fc.Args["role"].(model.Role), fc.Args["debug"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -981,9 +1064,9 @@ func (ec *executionContext) _Mutation_signup(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.Ok)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_signup(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -993,11 +1076,7 @@ func (ec *executionContext) fieldContext_Mutation_signup(ctx context.Context, fi
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ok":
-				return ec.fieldContext_Ok_ok(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Ok", field.Name)
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	defer func() {
@@ -1039,9 +1118,9 @@ func (ec *executionContext) _Mutation_verifyOTP(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.Token)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNToken2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_verifyOTP(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1051,11 +1130,7 @@ func (ec *executionContext) fieldContext_Mutation_verifyOTP(ctx context.Context,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "access":
-				return ec.fieldContext_Token_access(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Token", field.Name)
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	defer func() {
@@ -1113,10 +1188,10 @@ func (ec *executionContext) _Mutation_setCustomerProfile(ctx context.Context, fi
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.Ok); ok {
+		if data, ok := tmp.(bool); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/artemmarkaryan/exlex-backend/graph/model.Ok`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1127,9 +1202,9 @@ func (ec *executionContext) _Mutation_setCustomerProfile(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.Ok)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_setCustomerProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1139,11 +1214,7 @@ func (ec *executionContext) fieldContext_Mutation_setCustomerProfile(ctx context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ok":
-				return ec.fieldContext_Ok_ok(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Ok", field.Name)
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	defer func() {
@@ -1201,10 +1272,10 @@ func (ec *executionContext) _Mutation_setExecutorProfile(ctx context.Context, fi
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.Ok); ok {
+		if data, ok := tmp.(bool); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/artemmarkaryan/exlex-backend/graph/model.Ok`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1215,9 +1286,9 @@ func (ec *executionContext) _Mutation_setExecutorProfile(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.Ok)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_setExecutorProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1227,11 +1298,7 @@ func (ec *executionContext) fieldContext_Mutation_setExecutorProfile(ctx context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ok":
-				return ec.fieldContext_Ok_ok(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Ok", field.Name)
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	defer func() {
@@ -1373,72 +1440,13 @@ func (ec *executionContext) _Mutation_deleteSearch(ctx context.Context, field gr
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.Ok); ok {
+		if data, ok := tmp.(bool); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/artemmarkaryan/exlex-backend/graph/model.Ok`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.Ok)
-	fc.Result = res
-	return ec.marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_deleteSearch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ok":
-				return ec.fieldContext_Ok_ok(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Ok", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_deleteSearch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Ok_ok(ctx context.Context, field graphql.CollectedField, obj *model.Ok) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Ok_ok(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Ok, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1451,15 +1459,26 @@ func (ec *executionContext) _Ok_ok(ctx context.Context, field graphql.CollectedF
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Ok_ok(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_deleteSearch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Ok",
+		Object:     "Mutation",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteSearch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -1845,6 +1864,84 @@ func (ec *executionContext) fieldContext_Query_searches(ctx context.Context, fie
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Search", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_customer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_customer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Customer(rctx, fc.Args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.Customer); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/artemmarkaryan/exlex-backend/graph/model.Customer`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Customer)
+	fc.Result = res
+	return ec.marshalNCustomer2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐCustomer(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_customer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "fullName":
+				return ec.fieldContext_Customer_fullName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Customer", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_customer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -2422,50 +2519,6 @@ func (ec *executionContext) _Speciality_title(ctx context.Context, field graphql
 func (ec *executionContext) fieldContext_Speciality_title(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Speciality",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Token_access(ctx context.Context, field graphql.CollectedField, obj *model.Token) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Token_access(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Access, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Token_access(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Token",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -4353,42 +4406,6 @@ func (ec *executionContext) unmarshalInputDateInput(ctx context.Context, obj int
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputLoginData(ctx context.Context, obj interface{}) (model.LoginData, error) {
-	var it model.LoginData
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"Email", "Debug"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "Email":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Email"))
-			it.Email, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "Debug":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Debug"))
-			it.Debug, err = ec.unmarshalNBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputSearchRequirementsInput(ctx context.Context, obj interface{}) (model.SearchRequirementsInput, error) {
 	var it model.SearchRequirementsInput
 	asMap := map[string]interface{}{}
@@ -4513,50 +4530,6 @@ func (ec *executionContext) unmarshalInputSetExecutorProfileData(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSignupData(ctx context.Context, obj interface{}) (model.SignupData, error) {
-	var it model.SignupData
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"email", "role", "debug"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "email":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-			it.Email, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "role":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
-			it.Role, err = ec.unmarshalNRole2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "debug":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("debug"))
-			it.Debug, err = ec.unmarshalNBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -4564,6 +4537,34 @@ func (ec *executionContext) unmarshalInputSignupData(ctx context.Context, obj in
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var customerImplementors = []string{"Customer"}
+
+func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet, obj *model.Customer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, customerImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Customer")
+		case "fullName":
+
+			out.Values[i] = ec._Customer_fullName(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var dateImplementors = []string{"Date"}
 
@@ -4710,34 +4711,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
-var okImplementors = []string{"Ok"}
-
-func (ec *executionContext) _Ok(ctx context.Context, sel ast.SelectionSet, obj *model.Ok) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, okImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Ok")
-		case "ok":
-
-			out.Values[i] = ec._Ok_ok(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -4866,6 +4839,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_searches(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "customer":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_customer(ctx, field)
 				return res
 			}
 
@@ -5014,34 +5007,6 @@ func (ec *executionContext) _Speciality(ctx context.Context, sel ast.SelectionSe
 		case "title":
 
 			out.Values[i] = ec._Speciality_title(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var tokenImplementors = []string{"Token"}
-
-func (ec *executionContext) _Token(ctx context.Context, sel ast.SelectionSet, obj *model.Token) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, tokenImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Token")
-		case "access":
-
-			out.Values[i] = ec._Token_access(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -5395,6 +5360,10 @@ func (ec *executionContext) unmarshalNCreateSearchInput2githubᚗcomᚋartemmark
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNCustomer2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐCustomer(ctx context.Context, sel ast.SelectionSet, v model.Customer) graphql.Marshaler {
+	return ec._Customer(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNDate2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐDate(ctx context.Context, sel ast.SelectionSet, v *model.Date) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -5535,15 +5504,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNLoginData2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐLoginData(ctx context.Context, v interface{}) (model.LoginData, error) {
-	res, err := ec.unmarshalInputLoginData(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNOk2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐOk(ctx context.Context, sel ast.SelectionSet, v model.Ok) graphql.Marshaler {
-	return ec._Ok(ctx, sel, &v)
-}
-
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx context.Context, v interface{}) (model.Role, error) {
 	var res model.Role
 	err := res.UnmarshalGQL(v)
@@ -5621,11 +5581,6 @@ func (ec *executionContext) unmarshalNSetExecutorProfileData2githubᚗcomᚋarte
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNSignupData2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐSignupData(ctx context.Context, v interface{}) (model.SignupData, error) {
-	res, err := ec.unmarshalInputSignupData(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalNSpeciality2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐSpeciality(ctx context.Context, sel ast.SelectionSet, v model.Speciality) graphql.Marshaler {
 	return ec._Speciality(ctx, sel, &v)
 }
@@ -5687,10 +5642,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNToken2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐToken(ctx context.Context, sel ast.SelectionSet, v model.Token) graphql.Marshaler {
-	return ec._Token(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

@@ -16,6 +16,10 @@ type CreateSearchInput struct {
 	Requirements *SearchRequirementsInput `json:"requirements"`
 }
 
+type Customer struct {
+	FullName string `json:"fullName"`
+}
+
 type Date struct {
 	Year  int `json:"year"`
 	Month int `json:"month"`
@@ -31,15 +35,6 @@ type DateInput struct {
 type EducationType struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
-}
-
-type LoginData struct {
-	Email string `json:"Email"`
-	Debug bool   `json:"Debug"`
-}
-
-type Ok struct {
-	Ok bool `json:"ok"`
 }
 
 type Search struct {
@@ -73,19 +68,9 @@ type SetExecutorProfileData struct {
 	Specialization  []string `json:"specialization"`
 }
 
-type SignupData struct {
-	Email string `json:"email"`
-	Role  Role   `json:"role"`
-	Debug bool   `json:"debug"`
-}
-
 type Speciality struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
-}
-
-type Token struct {
-	Access string `json:"access"`
 }
 
 type Role string

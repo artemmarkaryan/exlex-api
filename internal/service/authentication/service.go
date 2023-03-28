@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	sq "github.com/Masterminds/squirrel"
@@ -15,6 +16,7 @@ import (
 )
 
 var ErrAlreadyExists = errors.New("user already exists")
+var ErrNotFound = errors.New("user not found")
 
 type serviceContainer interface {
 	OTP() otp.Service
@@ -60,6 +62,9 @@ func (s Service) Signup(ctx context.Context, email string, role schema.Role, deb
 func (s Service) Login(ctx context.Context, email string, debug bool) (err error) {
 	id, err := s.getUser(ctx, email)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrNotFound
+		}
 		return err
 	}
 

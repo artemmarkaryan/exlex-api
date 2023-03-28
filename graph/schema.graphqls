@@ -10,38 +10,22 @@ type Query {
 
     search(id: ID!): Search! @role(role: CUSTOMER) @authenticated
     searches: [Search]! @role(role: CUSTOMER) @authenticated
+
+    customer(id: ID!): Customer! @authenticated
 }
 
 type Mutation {
-    login(data: LoginData!): Ok!
-    signup(data: SignupData!): Ok!
-    verifyOTP(email: String!, otp: String!): Token!
+    login(email: String!, debug: Boolean!): Boolean!
+    signup(email: String!, role: Role!, debug: Boolean!): Boolean!
+    verifyOTP(email: String!, otp: String!): String!
 
-    setCustomerProfile(data: SetCustomerProfileData!): Ok!  @role(role: CUSTOMER) @authenticated
-    setExecutorProfile(data: SetExecutorProfileData!): Ok!  @role(role: EXECUTOR) @authenticated
+    setCustomerProfile(data: SetCustomerProfileData!): Boolean!  @role(role: CUSTOMER) @authenticated
+    setExecutorProfile(data: SetExecutorProfileData!): Boolean!  @role(role: EXECUTOR) @authenticated
 
     createSearch(data: CreateSearchInput!): ID! @role(role:CUSTOMER) @authenticated
-    deleteSearch(id: ID!): Ok! @role(role:CUSTOMER) @authenticated
+    deleteSearch(id: ID!): Boolean! @role(role:CUSTOMER) @authenticated
 }
 
-input LoginData {
-    Email: String!
-    Debug: Boolean!
-}
-
-input SignupData {
-    email: String!
-    role: Role!
-    debug: Boolean!
-}
-
-type Ok {
-    ok: Boolean!
-}
-
-type Token {
-    access: String!
-}
 
 enum Role {
     EXECUTOR
@@ -50,6 +34,10 @@ enum Role {
 
 input SetCustomerProfileData {
     fullName: String
+}
+
+type Customer {
+    fullName: String!
 }
 
 input SetExecutorProfileData {

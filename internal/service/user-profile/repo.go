@@ -7,6 +7,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/artemmarkaryan/exlex-backend/pkg/database"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -146,4 +147,39 @@ func (repo) setExecutor(ctx context.Context, d UpdateExecutorProfileData) error 
 			return err
 		},
 	)
+}
+
+func (repo) getCustomerProfile(ctx context.Context, id uuid.UUID) (c schema.CustomerMetadata, err error) {
+	err = database.Tx(ctx, database.DefaultTxOptions(),
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Select(`true`).
+				From(new(schema.UserAuth).TableName()).
+				Where(sq.Eq{"id": id})
+
+			_, err := database.GetTxX[bool](ctx, tx, q)
+			if err == sql.ErrNoRows {
+				return ErrUserNotFound
+			}
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Select(`*`).
+				From(new(schema.CustomerMetadata).TableName()).
+				Where(sq.Eq{"user_uuid": id})
+
+			c, err = database.GetTxX[schema.CustomerMetadata](ctx, tx, q)
+			if err == sql.ErrNoRows {
+				c.UserUUID = id
+			}
+
+			return nil
+		},
+	)
+
+	return
 }

@@ -20,44 +20,42 @@ import (
 )
 
 // Login is the resolver for the login field.
-func (r *mutationResolver) Login(ctx context.Context, data model.LoginData) (ok model.Ok, err error) {
-	err = r.ServiceContainer.Authentication().Login(ctx, data.Email, data.Debug)
-	ok.Ok = err == nil
+func (r *mutationResolver) Login(ctx context.Context, email string, debug bool) (ok bool, err error) {
+	err = r.ServiceContainer.
+		Authentication().
+		Login(ctx, email, debug)
+
+	ok = err == nil
 	return
 }
 
 // Signup is the resolver for the signup field.
-func (r *mutationResolver) Signup(ctx context.Context, data model.SignupData) (ok model.Ok, err error) {
-	role, err := schema.MapRole(data.Role)
+func (r *mutationResolver) Signup(ctx context.Context, email string, role model.Role, debug bool) (ok bool, err error) {
+	mappedRole, err := schema.MapRole(role)
 	if err != nil {
 		return
 	}
 
-	err = r.ServiceContainer.Authentication().Signup(ctx, data.Email, role, data.Debug)
-	ok.Ok = err == nil
+	err = r.ServiceContainer.Authentication().Signup(ctx, email, mappedRole, debug)
+	ok = err == nil
 	return
 }
 
 // VerifyOtp is the resolver for the verifyOTP field.
-func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp string) (token model.Token, err error) {
+func (r *mutationResolver) VerifyOtp(ctx context.Context, email string, otp string) (token string, err error) {
 	if _, err = mail.ParseAddress(email); err != nil {
 		return
 	}
 
-	t, err := r.ServiceContainer.Authentication().VerifyOTP(ctx, email, otp)
-	if err != nil {
-		return
-	}
-
-	token.Access = t
+	token, err = r.ServiceContainer.Authentication().VerifyOTP(ctx, email, otp)
 	return
 }
 
 // SetCustomerProfile is the resolver for the SetCustomerProfile field.
-func (r *mutationResolver) SetCustomerProfile(ctx context.Context, data model.SetCustomerProfileData) (model.Ok, error) {
+func (r *mutationResolver) SetCustomerProfile(ctx context.Context, data model.SetCustomerProfileData) (bool, error) {
 	c, err := auth.FromContext(ctx)
 	if err != nil {
-		return model.Ok{}, err
+		return false, err
 	}
 
 	updateData := user_profile.UpdateCustomerProfileData{}
@@ -68,14 +66,14 @@ func (r *mutationResolver) SetCustomerProfile(ctx context.Context, data model.Se
 		UserProfile().
 		UpdateCustomerProfile(ctx, updateData)
 
-	return model.Ok{Ok: err == nil}, err
+	return err == nil, err
 }
 
 // SetExecutorProfile is the resolver for the SetExecutorProfile field.
-func (r *mutationResolver) SetExecutorProfile(ctx context.Context, data model.SetExecutorProfileData) (model.Ok, error) {
+func (r *mutationResolver) SetExecutorProfile(ctx context.Context, data model.SetExecutorProfileData) (bool, error) {
 	c, err := auth.FromContext(ctx)
 	if err != nil {
-		return model.Ok{}, err
+		return false, err
 	}
 
 	updateData := user_profile.UpdateExecutorProfileData{}
@@ -85,8 +83,11 @@ func (r *mutationResolver) SetExecutorProfile(ctx context.Context, data model.Se
 	updateData.Specialities = data.Specialization
 	updateData.ExperienceYears = data.WorkExperience
 
-	err = r.ServiceContainer.UserProfile().UpdateExecutorProfile(ctx, updateData)
-	return model.Ok{Ok: err == nil}, err
+	err = r.ServiceContainer.
+		UserProfile().
+		UpdateExecutorProfile(ctx, updateData)
+
+	return err == nil, err
 }
 
 // CreateSearch is the resolver for the createSearch field.
@@ -120,20 +121,22 @@ func (r *mutationResolver) CreateSearch(ctx context.Context, data model.CreateSe
 }
 
 // DeleteSearch is the resolver for the deleteSearch field.
-func (r *mutationResolver) DeleteSearch(ctx context.Context, id string) (model.Ok, error) {
+func (r *mutationResolver) DeleteSearch(ctx context.Context, id string) (bool, error) {
 	claims, err := auth.FromContext(ctx)
 	if err != nil {
-		return model.Ok{Ok: false}, err
+		return false, err
 	}
 
 	searchID, err := uuid.Parse(id)
 	if err != nil {
-		return model.Ok{Ok: false}, ErrBadUUID
+		return false, ErrBadUUID
 	}
 
-	err = r.ServiceContainer.Search().Delete(ctx, claims.UserID, searchID)
+	err = r.ServiceContainer.
+		Search().
+		Delete(ctx, claims.UserID, searchID)
 
-	return model.Ok{Ok: err == nil}, err
+	return err == nil, err
 }
 
 // Live is the resolver for the live field.
@@ -220,6 +223,25 @@ func (r *queryResolver) Search(ctx context.Context, id string) (model.Search, er
 // Searches is the resolver for the searches field.
 func (r *queryResolver) Searches(ctx context.Context) ([]*model.Search, error) {
 	panic(fmt.Errorf("not implemented: Searches - searches"))
+}
+
+// Customer is the resolver for the customer field.
+func (r *queryResolver) Customer(ctx context.Context, id string) (c model.Customer, err error) {
+	uuid_, err := uuid.Parse(id)
+	if err != nil {
+		return c, fmt.Errorf("bad id %q: %w", id, err)
+	}
+
+	customerProfile, err := r.ServiceContainer.
+		UserProfile().
+		GetCustomerProfile(ctx, uuid_)
+
+	if err != nil {
+		return
+	}
+
+	c = model.Customer{FullName: customerProfile.FullName}
+	return
 }
 
 // Mutation returns MutationResolver implementation.
