@@ -8,8 +8,8 @@ type Query {
     specialities: [Speciality!]!
     educationTypes: [EducationType!]!
 
-    search(id: ID!): Search! @role(role: CUSTOMER) @authenticated
-    searches: [Search]! @role(role: CUSTOMER) @authenticated
+    search(id: ID!): Search! @role(role: customer) @authenticated
+    searches: [Search]! @role(role: customer) @authenticated
 
     customer(id: ID!): Customer! @authenticated
 }
@@ -19,17 +19,17 @@ type Mutation {
     signup(email: String!, role: Role!, debug: Boolean!): Boolean!
     verifyOTP(email: String!, otp: String!): String!
 
-    setCustomerProfile(data: SetCustomerProfileData!): Boolean!  @role(role: CUSTOMER) @authenticated
-    setExecutorProfile(data: SetExecutorProfileData!): Boolean!  @role(role: EXECUTOR) @authenticated
+    setCustomerProfile(data: SetCustomerProfileData!): Boolean!  @role(role: customer) @authenticated
+    setExecutorProfile(data: SetExecutorProfileData!): Boolean!  @role(role: executor) @authenticated
 
-    createSearch(data: CreateSearchInput!): ID! @role(role:CUSTOMER) @authenticated
-    deleteSearch(id: ID!): Boolean! @role(role:CUSTOMER) @authenticated
+    createSearch(data: CreateSearchInput!): ID! @role(role:customer) @authenticated
+    deleteSearch(id: ID!): Boolean! @role(role:customer) @authenticated
 }
 
 
 enum Role {
-    EXECUTOR
-    CUSTOMER
+    executor
+    customer
 }
 
 input SetCustomerProfileData {

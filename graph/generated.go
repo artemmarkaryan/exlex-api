@@ -1165,7 +1165,7 @@ func (ec *executionContext) _Mutation_setCustomerProfile(ctx context.Context, fi
 			return ec.resolvers.Mutation().SetCustomerProfile(rctx, fc.Args["data"].(model.SetCustomerProfileData))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "CUSTOMER")
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "customer")
 			if err != nil {
 				return nil, err
 			}
@@ -1249,7 +1249,7 @@ func (ec *executionContext) _Mutation_setExecutorProfile(ctx context.Context, fi
 			return ec.resolvers.Mutation().SetExecutorProfile(rctx, fc.Args["data"].(model.SetExecutorProfileData))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "EXECUTOR")
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "executor")
 			if err != nil {
 				return nil, err
 			}
@@ -1333,7 +1333,7 @@ func (ec *executionContext) _Mutation_createSearch(ctx context.Context, field gr
 			return ec.resolvers.Mutation().CreateSearch(rctx, fc.Args["data"].(model.CreateSearchInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "CUSTOMER")
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "customer")
 			if err != nil {
 				return nil, err
 			}
@@ -1417,7 +1417,7 @@ func (ec *executionContext) _Mutation_deleteSearch(ctx context.Context, field gr
 			return ec.resolvers.Mutation().DeleteSearch(rctx, fc.Args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "CUSTOMER")
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "customer")
 			if err != nil {
 				return nil, err
 			}
@@ -1705,7 +1705,7 @@ func (ec *executionContext) _Query_search(ctx context.Context, field graphql.Col
 			return ec.resolvers.Query().Search(rctx, fc.Args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "CUSTOMER")
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "customer")
 			if err != nil {
 				return nil, err
 			}
@@ -1801,7 +1801,7 @@ func (ec *executionContext) _Query_searches(ctx context.Context, field graphql.C
 			return ec.resolvers.Query().Searches(rctx)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "CUSTOMER")
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "customer")
 			if err != nil {
 				return nil, err
 			}

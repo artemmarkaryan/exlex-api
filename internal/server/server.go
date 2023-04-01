@@ -69,7 +69,18 @@ func Serve(ctx context.Context) (err error) {
 	router.Handle("/query", handler.NewDefaultServer(graph.NewExecutableSchema(config)))
 
 	log.Printf("connect to http://localhost:%s/%s for GraphQL playground", port, playgroundPath)
-	return http.ListenAndServe(":"+port, router)
+
+	server := http.Server{
+		Addr:    ":" + port,
+		Handler: router,
+	}
+
+	go func() {
+		<-ctx.Done()
+		server.Shutdown(ctx)
+	}()
+
+	return server.ListenAndServe()
 }
 
 func MiddlewareContextPropagate(parentCtx context.Context) func(handler http.Handler) http.Handler {

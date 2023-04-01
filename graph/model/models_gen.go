@@ -76,8 +76,8 @@ type Speciality struct {
 type Role string
 
 const (
-	RoleExecutor Role = "EXECUTOR"
-	RoleCustomer Role = "CUSTOMER"
+	RoleExecutor Role = "executor"
+	RoleCustomer Role = "customer"
 )
 
 var AllRole = []Role{
