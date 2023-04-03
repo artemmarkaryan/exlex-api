@@ -14,3 +14,6 @@ load-env:
 
 migrate: load-env
 	$(GOOSE_BIN) up
+
+start:
+	go run ./cmd/main.go

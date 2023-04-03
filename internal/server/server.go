@@ -17,9 +17,22 @@ import (
 	"github.com/artemmarkaryan/exlex-backend/pkg/tokenizer"
 	"github.com/cristalhq/jwt/v5"
 	"github.com/go-chi/chi"
+	"github.com/rs/cors"
 )
 
 const defaultPort = "8080"
+const playgroundPath = "playground"
+
+func initCors() *cors.Cors {
+	config := cors.Options{
+		AllowCredentials: true,
+		AllowedHeaders:   []string{"*"},
+		AllowOriginFunc:  func(origin string) bool { return true },
+		Debug:            true,
+	}
+
+	return cors.New(config)
+}
 
 func Serve(ctx context.Context) (err error) {
 	port := os.Getenv("PORT")
@@ -54,6 +67,8 @@ func Serve(ctx context.Context) (err error) {
 	}
 
 	router := chi.NewRouter()
+
+	router.Use(initCors().Handler)
 	router.Use(
 		MiddlewareContextPropagate(ctx),
 		auth.Middleware,
@@ -64,9 +79,10 @@ func Serve(ctx context.Context) (err error) {
 	config.Directives.Authenticated = auth.DirectiveAuthenticated
 	config.Directives.Role = auth.DirectiveRole
 
-	playgroundPath := "playground"
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(config))
+
 	router.Handle("/"+playgroundPath, playground.Handler("playground", "/query"))
-	router.Handle("/query", handler.NewDefaultServer(graph.NewExecutableSchema(config)))
+	router.Handle("/query", srv)
 
 	log.Printf("connect to http://localhost:%s/%s for GraphQL playground", port, playgroundPath)
 
