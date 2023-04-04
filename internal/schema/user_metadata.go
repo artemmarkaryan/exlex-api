@@ -40,3 +40,8 @@ type ExecutorMetadata struct {
 }
 
 func (ExecutorMetadata) TableName() string { return "executor_metadata" }
+
+type FullExecutorMetadata struct {
+	ExecutorMetadata
+	Specialities []string
+}

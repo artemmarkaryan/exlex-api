@@ -11,7 +11,8 @@ type Query {
     search(id: ID!): Search! @role(role: customer) @authenticated
     searches: [Search]! @role(role: customer) @authenticated
 
-    customer(id: ID!): Customer! @authenticated
+    selfCustomerProfile: Customer! @role(role: customer) @authenticated 
+    selfExecutorProfile: Executor! @role(role: executor) @authenticated 
 }
 
 type Mutation {
@@ -45,6 +46,13 @@ input SetExecutorProfileData {
     workExperience: Int
     educationTypeID: ID
     specialization: [ID!]
+}
+
+type Executor {
+    fullName: String
+    workExperience: Int
+    educationTypeID: ID
+    specialization: [ID!]!
 }
 
 type Speciality {

@@ -61,6 +61,13 @@ type ComplexityRoot struct {
 		Title func(childComplexity int) int
 	}
 
+	Executor struct {
+		EducationTypeID func(childComplexity int) int
+		FullName        func(childComplexity int) int
+		Specialization  func(childComplexity int) int
+		WorkExperience  func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateSearch       func(childComplexity int, data model.CreateSearchInput) int
 		DeleteSearch       func(childComplexity int, id string) int
@@ -72,13 +79,14 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Authenticated  func(childComplexity int) int
-		Customer       func(childComplexity int, id string) int
-		EducationTypes func(childComplexity int) int
-		Live           func(childComplexity int) int
-		Search         func(childComplexity int, id string) int
-		Searches       func(childComplexity int) int
-		Specialities   func(childComplexity int) int
+		Authenticated       func(childComplexity int) int
+		EducationTypes      func(childComplexity int) int
+		Live                func(childComplexity int) int
+		Search              func(childComplexity int, id string) int
+		Searches            func(childComplexity int) int
+		SelfCustomerProfile func(childComplexity int) int
+		SelfExecutorProfile func(childComplexity int) int
+		Specialities        func(childComplexity int) int
 	}
 
 	Search struct {
@@ -117,7 +125,8 @@ type QueryResolver interface {
 	EducationTypes(ctx context.Context) ([]model.EducationType, error)
 	Search(ctx context.Context, id string) (model.Search, error)
 	Searches(ctx context.Context) ([]*model.Search, error)
-	Customer(ctx context.Context, id string) (model.Customer, error)
+	SelfCustomerProfile(ctx context.Context) (model.Customer, error)
+	SelfExecutorProfile(ctx context.Context) (model.Executor, error)
 }
 
 type executableSchema struct {
@@ -176,6 +185,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EducationType.Title(childComplexity), true
+
+	case "Executor.educationTypeID":
+		if e.complexity.Executor.EducationTypeID == nil {
+			break
+		}
+
+		return e.complexity.Executor.EducationTypeID(childComplexity), true
+
+	case "Executor.fullName":
+		if e.complexity.Executor.FullName == nil {
+			break
+		}
+
+		return e.complexity.Executor.FullName(childComplexity), true
+
+	case "Executor.specialization":
+		if e.complexity.Executor.Specialization == nil {
+			break
+		}
+
+		return e.complexity.Executor.Specialization(childComplexity), true
+
+	case "Executor.workExperience":
+		if e.complexity.Executor.WorkExperience == nil {
+			break
+		}
+
+		return e.complexity.Executor.WorkExperience(childComplexity), true
 
 	case "Mutation.createSearch":
 		if e.complexity.Mutation.CreateSearch == nil {
@@ -268,18 +305,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Authenticated(childComplexity), true
 
-	case "Query.customer":
-		if e.complexity.Query.Customer == nil {
-			break
-		}
-
-		args, err := ec.field_Query_customer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Customer(childComplexity, args["id"].(string)), true
-
 	case "Query.educationTypes":
 		if e.complexity.Query.EducationTypes == nil {
 			break
@@ -312,6 +337,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Searches(childComplexity), true
+
+	case "Query.selfCustomerProfile":
+		if e.complexity.Query.SelfCustomerProfile == nil {
+			break
+		}
+
+		return e.complexity.Query.SelfCustomerProfile(childComplexity), true
+
+	case "Query.selfExecutorProfile":
+		if e.complexity.Query.SelfExecutorProfile == nil {
+			break
+		}
+
+		return e.complexity.Query.SelfExecutorProfile(childComplexity), true
 
 	case "Query.specialities":
 		if e.complexity.Query.Specialities == nil {
@@ -653,21 +692,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_customer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_search_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -980,6 +1004,173 @@ func (ec *executionContext) fieldContext_EducationType_title(ctx context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Executor_fullName(ctx context.Context, field graphql.CollectedField, obj *model.Executor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Executor_fullName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FullName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Executor_fullName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Executor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Executor_workExperience(ctx context.Context, field graphql.CollectedField, obj *model.Executor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Executor_workExperience(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkExperience, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Executor_workExperience(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Executor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Executor_educationTypeID(ctx context.Context, field graphql.CollectedField, obj *model.Executor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Executor_educationTypeID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EducationTypeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Executor_educationTypeID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Executor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Executor_specialization(ctx context.Context, field graphql.CollectedField, obj *model.Executor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Executor_specialization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Specialization, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Executor_specialization(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Executor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1868,8 +2059,8 @@ func (ec *executionContext) fieldContext_Query_searches(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_customer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_customer(ctx, field)
+func (ec *executionContext) _Query_selfCustomerProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_selfCustomerProfile(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1883,16 +2074,26 @@ func (ec *executionContext) _Query_customer(ctx context.Context, field graphql.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Customer(rctx, fc.Args["id"].(string))
+			return ec.resolvers.Query().SelfCustomerProfile(rctx)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "customer")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Role == nil {
+				return nil, errors.New("directive role is not implemented")
+			}
+			return ec.directives.Role(ctx, nil, directive0, role)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Authenticated == nil {
 				return nil, errors.New("directive authenticated is not implemented")
 			}
-			return ec.directives.Authenticated(ctx, nil, directive0)
+			return ec.directives.Authenticated(ctx, nil, directive1)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, graphql.ErrorOnPath(ctx, err)
 		}
@@ -1918,7 +2119,7 @@ func (ec *executionContext) _Query_customer(ctx context.Context, field graphql.C
 	return ec.marshalNCustomer2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐCustomer(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_customer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_selfCustomerProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1932,16 +2133,88 @@ func (ec *executionContext) fieldContext_Query_customer(ctx context.Context, fie
 			return nil, fmt.Errorf("no field named %q was found under type Customer", field.Name)
 		},
 	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_selfExecutorProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_selfExecutorProfile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
 	defer func() {
 		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
 		}
 	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_customer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().SelfExecutorProfile(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "executor")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Role == nil {
+				return nil, errors.New("directive role is not implemented")
+			}
+			return ec.directives.Role(ctx, nil, directive0, role)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive1)
+		}
+
+		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.Executor); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/artemmarkaryan/exlex-backend/graph/model.Executor`, tmp)
+	})
+	if err != nil {
 		ec.Error(ctx, err)
-		return
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Executor)
+	fc.Result = res
+	return ec.marshalNExecutor2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐExecutor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_selfExecutorProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "fullName":
+				return ec.fieldContext_Executor_fullName(ctx, field)
+			case "workExperience":
+				return ec.fieldContext_Executor_workExperience(ctx, field)
+			case "educationTypeID":
+				return ec.fieldContext_Executor_educationTypeID(ctx, field)
+			case "specialization":
+				return ec.fieldContext_Executor_specialization(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Executor", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -4643,6 +4916,46 @@ func (ec *executionContext) _EducationType(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var executorImplementors = []string{"Executor"}
+
+func (ec *executionContext) _Executor(ctx context.Context, sel ast.SelectionSet, obj *model.Executor) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, executorImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Executor")
+		case "fullName":
+
+			out.Values[i] = ec._Executor_fullName(ctx, field, obj)
+
+		case "workExperience":
+
+			out.Values[i] = ec._Executor_workExperience(ctx, field, obj)
+
+		case "educationTypeID":
+
+			out.Values[i] = ec._Executor_educationTypeID(ctx, field, obj)
+
+		case "specialization":
+
+			out.Values[i] = ec._Executor_specialization(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -4849,7 +5162,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "customer":
+		case "selfCustomerProfile":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -4858,7 +5171,27 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_customer(ctx, field)
+				res = ec._Query_selfCustomerProfile(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "selfExecutorProfile":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_selfExecutorProfile(ctx, field)
 				return res
 			}
 
@@ -5425,6 +5758,10 @@ func (ec *executionContext) marshalNEducationType2ᚕgithubᚗcomᚋartemmarkary
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalNExecutor2githubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐExecutor(ctx context.Context, sel ast.SelectionSet, v model.Executor) graphql.Marshaler {
+	return ec._Executor(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {

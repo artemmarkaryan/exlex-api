@@ -37,6 +37,13 @@ type EducationType struct {
 	Title string `json:"title"`
 }
 
+type Executor struct {
+	FullName        *string  `json:"fullName"`
+	WorkExperience  *int     `json:"workExperience"`
+	EducationTypeID *string  `json:"educationTypeID"`
+	Specialization  []string `json:"specialization"`
+}
+
 type Search struct {
 	Title        string              `json:"title"`
 	Description  string              `json:"description"`

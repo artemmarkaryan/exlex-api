@@ -78,3 +78,24 @@ func (s Service) GetCustomerProfile(ctx context.Context, id uuid.UUID) (Customer
 		FullName: cp.Name,
 	}, nil
 }
+
+type ExecutorProfile struct {
+	FullName        string
+	WorkExperience  int
+	EducationTypeID string
+	Specialization  []string
+}
+
+func (s Service) GetExecutorProfile(ctx context.Context, id uuid.UUID) (ExecutorProfile, error) {
+	ep, err := s.repo.getExecutorProfile(ctx, id)
+	if err != nil {
+		return ExecutorProfile{}, err
+	}
+
+	return ExecutorProfile{
+		FullName:        ep.FullName,
+		WorkExperience:  ep.ExperienceYears,
+		EducationTypeID: ep.Education,
+		Specialization:  ep.Specialities,
+	}, nil
+}

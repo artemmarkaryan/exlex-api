@@ -3,6 +3,7 @@ package user_profile
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
@@ -130,6 +131,7 @@ func (repo) setExecutor(ctx context.Context, d UpdateExecutorProfileData) error 
 			return err
 		},
 
+		// insert specialities
 		func(tx *sqlx.Tx) error {
 			if len(d.Specialities) == 0 {
 				return nil
@@ -143,7 +145,23 @@ func (repo) setExecutor(ctx context.Context, d UpdateExecutorProfileData) error 
 				q = q.Values(d.UserUUID, s)
 			}
 
+			q = q.Suffix(`on conflict (user_uuid, speciality) do nothing`)
+
 			_, err := database.InsertTxX(ctx, tx, q)
+			return err
+		},
+
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Delete(new(schema.UserSpeciality).TableName()).
+				Where(
+					sq.And{
+						sq.Eq{"user_uuid": d.UserUUID},
+						sq.NotEq{"speciality": d.Specialities},
+					},
+				)
+
+			_, err := database.DeleteTxX(ctx, tx, q)
 			return err
 		},
 	)
@@ -178,6 +196,62 @@ func (repo) getCustomerProfile(ctx context.Context, id uuid.UUID) (c schema.Cust
 			}
 
 			return nil
+		},
+	)
+
+	return
+}
+
+func (repo) getExecutorProfile(ctx context.Context, id uuid.UUID) (m schema.FullExecutorMetadata, err error) {
+	err = database.Tx(ctx, database.DefaultTxOptions(),
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Select(`true`).
+				From(new(schema.UserAuth).TableName()).
+				Where(sq.Eq{"id": id})
+
+			_, err := database.GetTxX[bool](ctx, tx, q)
+			if err == sql.ErrNoRows {
+				return ErrUserNotFound
+			}
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Select(`*`).
+				From(new(schema.ExecutorMetadata).TableName()).
+				Where(sq.Eq{"user_uuid": id})
+
+			m.ExecutorMetadata, err = database.GetTxX[schema.ExecutorMetadata](ctx, tx, q)
+			if err == sql.ErrNoRows {
+				m.UserUUID = id
+			}
+
+			return nil
+		},
+
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Select("jsonb_agg(speciality)").
+				From(new(schema.UserSpeciality).TableName()).
+				Where(sq.Eq{"user_uuid": id})
+
+			raw, err := database.GetTxX[[]byte](ctx, tx, q)
+			if err != nil {
+				return err
+			}
+
+			if len(raw) == 0 {
+				m.Specialities = []string{}
+				return nil
+			}
+
+			err = json.Unmarshal(raw, &m.Specialities)
+			return err
 		},
 	)
 

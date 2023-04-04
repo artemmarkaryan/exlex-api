@@ -17,6 +17,7 @@ import (
 	user_profile "github.com/artemmarkaryan/exlex-backend/internal/service/user-profile"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
+	"golang.org/x/exp/slices"
 )
 
 // Login is the resolver for the login field.
@@ -76,11 +77,51 @@ func (r *mutationResolver) SetExecutorProfile(ctx context.Context, data model.Se
 		return false, err
 	}
 
+	specialities, err := r.ServiceContainer.UserProfile().Specialities(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	for _, s := range data.Specialization {
+		found := false
+		for _, ss := range specialities {
+			if ss.ID == s {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return false, ErrNotFound("speciality")
+		}
+	}
+
+	if data.EducationTypeID != nil {
+		educationTypes, err := r.ServiceContainer.UserProfile().EducationTypes(ctx)
+		if err != nil {
+			return false, err
+		}
+
+		found := false
+		for _, et := range educationTypes {
+			if et.ID == *data.EducationTypeID {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return false, ErrNotFound("education type")
+		}
+	}
+
+	slices.Sort(data.Specialization)
+
 	updateData := user_profile.UpdateExecutorProfileData{}
 	updateData.UserUUID = c.UserID
 	updateData.FullName = data.FullName
 	updateData.Education = data.EducationTypeID
-	updateData.Specialities = data.Specialization
+	updateData.Specialities = slices.Compact(data.Specialization)
 	updateData.ExperienceYears = data.WorkExperience
 
 	err = r.ServiceContainer.
@@ -225,22 +266,46 @@ func (r *queryResolver) Searches(ctx context.Context) ([]*model.Search, error) {
 	panic(fmt.Errorf("not implemented: Searches - searches"))
 }
 
-// Customer is the resolver for the customer field.
-func (r *queryResolver) Customer(ctx context.Context, id string) (c model.Customer, err error) {
-	uuid_, err := uuid.Parse(id)
+// SelfCustomerProfile is the resolver for the selfCustomerProfile field.
+func (r *queryResolver) SelfCustomerProfile(ctx context.Context) (c model.Customer, err error) {
+	claims, err := auth.FromContext(ctx)
 	if err != nil {
-		return c, fmt.Errorf("bad id %q: %w", id, err)
+		return
 	}
 
 	customerProfile, err := r.ServiceContainer.
 		UserProfile().
-		GetCustomerProfile(ctx, uuid_)
+		GetCustomerProfile(ctx, claims.UserID)
 
 	if err != nil {
 		return
 	}
 
 	c = model.Customer{FullName: customerProfile.FullName}
+	return
+}
+
+// SelfExecutorProfile is the resolver for the selfExecutorProfile field.
+func (r *queryResolver) SelfExecutorProfile(ctx context.Context) (e model.Executor, err error) {
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return
+	}
+
+	customerProfile, err := r.ServiceContainer.
+		UserProfile().
+		GetExecutorProfile(ctx, claims.UserID)
+
+	if err != nil {
+		return
+	}
+
+	e = model.Executor{
+		FullName:        &customerProfile.FullName,
+		WorkExperience:  &customerProfile.WorkExperience,
+		EducationTypeID: &customerProfile.EducationTypeID,
+		Specialization:  customerProfile.Specialization,
+	}
 	return
 }
 

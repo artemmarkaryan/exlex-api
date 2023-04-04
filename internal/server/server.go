@@ -68,10 +68,11 @@ func Serve(ctx context.Context) (err error) {
 
 	router := chi.NewRouter()
 
-	router.Use(initCors().Handler)
 	router.Use(
 		MiddlewareContextPropagate(ctx),
 		auth.Middleware,
+		initCors().Handler,
+
 		// todo: log errors
 	)
 
