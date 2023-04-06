@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -85,16 +84,6 @@ func Serve(ctx context.Context) (err error) {
 
 	router.Handle("/"+playgroundPath, playground.Handler("playground", "/query"))
 	router.Handle("/query", srv)
-	router.Handle("/schema", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		schema, err := ioutil.ReadFile("../graph/schema.graphqls")
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Write(schema)
-	}))
 
 	log.Printf("connect to http://localhost:%s/%s for GraphQL playground", port, playgroundPath)
 
