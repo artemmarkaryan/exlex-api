@@ -54,14 +54,14 @@ type Search struct {
 
 type SearchRequirements struct {
 	Speciality     []string `json:"speciality"`
-	EducationType  []string `json:"education_type"`
-	WorkExperience int      `json:"work_experience"`
+	EducationType  []string `json:"educationType"`
+	WorkExperience int      `json:"workExperience"`
 }
 
 type SearchRequirementsInput struct {
 	Speciality     []string `json:"speciality"`
-	EducationType  []string `json:"education_type"`
-	WorkExperience int      `json:"work_experience"`
+	EducationType  []string `json:"educationType"`
+	WorkExperience int      `json:"workExperience"`
 }
 
 type SetCustomerProfileData struct {
