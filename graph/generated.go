@@ -382,7 +382,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Search.Description(childComplexity), true
 
-	case "Search.ID":
+	case "Search.id":
 		if e.complexity.Search.ID == nil {
 			break
 		}
@@ -1962,8 +1962,8 @@ func (ec *executionContext) fieldContext_Query_search(ctx context.Context, field
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Search_ID(ctx, field)
+			case "id":
+				return ec.fieldContext_Search_id(ctx, field)
 			case "title":
 				return ec.fieldContext_Search_title(ctx, field)
 			case "description":
@@ -2062,8 +2062,8 @@ func (ec *executionContext) fieldContext_Query_searches(ctx context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Search_ID(ctx, field)
+			case "id":
+				return ec.fieldContext_Search_id(ctx, field)
 			case "title":
 				return ec.fieldContext_Search_title(ctx, field)
 			case "description":
@@ -2370,8 +2370,8 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Search_ID(ctx context.Context, field graphql.CollectedField, obj *model.Search) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Search_ID(ctx, field)
+func (ec *executionContext) _Search_id(ctx context.Context, field graphql.CollectedField, obj *model.Search) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Search_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2401,7 +2401,7 @@ func (ec *executionContext) _Search_ID(ctx context.Context, field graphql.Collec
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Search_ID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Search_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Search",
 		Field:      field,
@@ -5344,9 +5344,9 @@ func (ec *executionContext) _Search(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Search")
-		case "ID":
+		case "id":
 
-			out.Values[i] = ec._Search_ID(ctx, field, obj)
+			out.Values[i] = ec._Search_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

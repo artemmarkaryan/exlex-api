@@ -98,7 +98,7 @@ input CreateSearchInput {
 }
 
 type Search {
-    ID: ID!
+    id: ID!
     title: String!
     description: String!
     price: Float!

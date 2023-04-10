@@ -45,7 +45,7 @@ type Executor struct {
 }
 
 type Search struct {
-	ID           string              `json:"ID"`
+	ID           string              `json:"id"`
 	Title        string              `json:"title"`
 	Description  string              `json:"description"`
 	Price        float64             `json:"price"`
