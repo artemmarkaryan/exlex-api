@@ -17,3 +17,6 @@ migrate: load-env
 
 run:
 	go run ./cmd/main.go
+
+start:
+	go run $(CURDIR)/cmd/main.go
