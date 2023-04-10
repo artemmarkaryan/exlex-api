@@ -394,7 +394,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Search.Title(childComplexity), true
 
-	case "SearchRequirements.education_type":
+	case "SearchRequirements.educationType":
 		if e.complexity.SearchRequirements.EducationType == nil {
 			break
 		}
@@ -408,7 +408,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SearchRequirements.Speciality(childComplexity), true
 
-	case "SearchRequirements.work_experience":
+	case "SearchRequirements.workExperience":
 		if e.complexity.SearchRequirements.WorkExperience == nil {
 			break
 		}
@@ -2571,10 +2571,10 @@ func (ec *executionContext) fieldContext_Search_requirements(ctx context.Context
 			switch field.Name {
 			case "speciality":
 				return ec.fieldContext_SearchRequirements_speciality(ctx, field)
-			case "education_type":
-				return ec.fieldContext_SearchRequirements_education_type(ctx, field)
-			case "work_experience":
-				return ec.fieldContext_SearchRequirements_work_experience(ctx, field)
+			case "educationType":
+				return ec.fieldContext_SearchRequirements_educationType(ctx, field)
+			case "workExperience":
+				return ec.fieldContext_SearchRequirements_workExperience(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SearchRequirements", field.Name)
 		},
@@ -2626,8 +2626,8 @@ func (ec *executionContext) fieldContext_SearchRequirements_speciality(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _SearchRequirements_education_type(ctx context.Context, field graphql.CollectedField, obj *model.SearchRequirements) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SearchRequirements_education_type(ctx, field)
+func (ec *executionContext) _SearchRequirements_educationType(ctx context.Context, field graphql.CollectedField, obj *model.SearchRequirements) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchRequirements_educationType(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2657,7 +2657,7 @@ func (ec *executionContext) _SearchRequirements_education_type(ctx context.Conte
 	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SearchRequirements_education_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SearchRequirements_educationType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SearchRequirements",
 		Field:      field,
@@ -2670,8 +2670,8 @@ func (ec *executionContext) fieldContext_SearchRequirements_education_type(ctx c
 	return fc, nil
 }
 
-func (ec *executionContext) _SearchRequirements_work_experience(ctx context.Context, field graphql.CollectedField, obj *model.SearchRequirements) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SearchRequirements_work_experience(ctx, field)
+func (ec *executionContext) _SearchRequirements_workExperience(ctx context.Context, field graphql.CollectedField, obj *model.SearchRequirements) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchRequirements_workExperience(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2701,7 +2701,7 @@ func (ec *executionContext) _SearchRequirements_work_experience(ctx context.Cont
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SearchRequirements_work_experience(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SearchRequirements_workExperience(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SearchRequirements",
 		Field:      field,
@@ -4686,7 +4686,7 @@ func (ec *executionContext) unmarshalInputSearchRequirementsInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"speciality", "education_type", "work_experience"}
+	fieldsInOrder := [...]string{"speciality", "educationType", "workExperience"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4701,18 +4701,18 @@ func (ec *executionContext) unmarshalInputSearchRequirementsInput(ctx context.Co
 			if err != nil {
 				return it, err
 			}
-		case "education_type":
+		case "educationType":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("education_type"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("educationType"))
 			it.EducationType, err = ec.unmarshalNID2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "work_experience":
+		case "workExperience":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("work_experience"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workExperience"))
 			it.WorkExperience, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
@@ -5295,16 +5295,16 @@ func (ec *executionContext) _SearchRequirements(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "education_type":
+		case "educationType":
 
-			out.Values[i] = ec._SearchRequirements_education_type(ctx, field, obj)
+			out.Values[i] = ec._SearchRequirements_educationType(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "work_experience":
+		case "workExperience":
 
-			out.Values[i] = ec._SearchRequirements_work_experience(ctx, field, obj)
+			out.Values[i] = ec._SearchRequirements_workExperience(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

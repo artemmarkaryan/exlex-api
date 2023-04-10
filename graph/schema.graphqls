@@ -79,14 +79,14 @@ type Date {
 
 input SearchRequirementsInput {
     speciality: [ID!]!
-    education_type: [ID!]!
-    work_experience: Int!
+    educationType: [ID!]!
+    workExperience: Int!
 }
 
 type SearchRequirements {
     speciality: [ID!]!
-    education_type: [ID!]!
-    work_experience: Int!
+    educationType: [ID!]!
+    workExperience: Int!
 }
 
 input CreateSearchInput {
