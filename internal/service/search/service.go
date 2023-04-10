@@ -37,6 +37,7 @@ type Search struct {
 	Price                  float64
 	RequiredWorkExperience int
 	Deadline               *time.Time
+	CreatedAt              time.Time
 	RequiredSpecialities   []string
 	RequiredEducation      []string
 }
@@ -75,26 +76,29 @@ func (s Service) Get(ctx context.Context, user, search uuid.UUID) (se Search, er
 	return dboToSearch(dbo), nil
 }
 
+func (s Service) List(ctx context.Context, user uuid.UUID) (se []Search, err error) {
+	dbos, err := s.repo.list(ctx, user)
+	if err != nil {
+		return
+	}
+
+	se = lo.Map(dbos, func(o schema.SearchFullData, _ int) Search {
+		return dboToSearch(o)
+	})
+
+	return
+}
+
 func dboToSearch(dbo schema.SearchFullData) (s Search) {
 	return Search{
-		ID:                     dbo.Search.ID,
-		Creator:                dbo.Search.Creator,
-		Name:                   dbo.Search.Name,
-		Description:            dbo.Search.Description,
-		Price:                  dbo.Search.Price,
-		RequiredWorkExperience: dbo.Search.RequiredWorkExperience,
-		Deadline:               dbo.Search.Deadline,
-		RequiredSpecialities: lo.Map(
-			dbo.Speciality, func(i schema.SearchRequirementSpeciality,
-				_ int) string {
-				return i.Speciality
-			},
-		),
-		RequiredEducation: lo.Map(
-			dbo.Education, func(i schema.SearchRequirementEducation,
-				_ int) string {
-				return i.Education
-			},
-		),
+		ID:                     dbo.ID,
+		Name:                   dbo.Name,
+		Description:            dbo.Description,
+		Price:                  dbo.Price,
+		RequiredWorkExperience: dbo.RequiredWorkExperience,
+		Deadline:               dbo.Deadline,
+		CreatedAt:              dbo.CreatedAt,
+		RequiredSpecialities:   dbo.Speciality,
+		RequiredEducation:      dbo.Education,
 	}
 }

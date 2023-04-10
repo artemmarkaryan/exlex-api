@@ -13,6 +13,7 @@ services:
     command: [ "postgres", "-c", "log_statement=all" ]
     volumes:
       - postgresql:/var/lib/postgresql/data
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin4_container

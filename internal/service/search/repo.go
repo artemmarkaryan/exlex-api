@@ -2,12 +2,14 @@ package search
 
 import (
 	"context"
+	"encoding/json"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/artemmarkaryan/exlex-backend/pkg/database"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/samber/lo"
 )
 
 type repo struct{}
@@ -128,36 +130,92 @@ func (repo) checkCreator(ctx context.Context, user uuid.UUID, search uuid.UUID) 
 }
 
 func (r repo) get(ctx context.Context, search uuid.UUID) (d schema.SearchFullData, err error) {
-	err = database.Tx(
-		ctx, database.DefaultTxOptions(),
-		func(tx *sqlx.Tx) (errTx error) {
-			q := sq.
-				Select("*").
-				From(new(schema.Search).TableName()).
-				Where(sq.Eq{"id": search})
+	// err = database.Tx(
+	// 	ctx, database.DefaultTxOptions(),
+	// 	func(tx *sqlx.Tx) (errTx error) {
+	// 		q := sq.
+	// 			Select("*").
+	// 			From(new(schema.Search).TableName()).
+	// 			Where(sq.Eq{"id": search})
 
-			d.Search, errTx = database.GetTxX[schema.Search](ctx, tx, q)
-			return
-		},
-		func(tx *sqlx.Tx) (errTx error) {
-			q := sq.
-				Select("*").
-				From(new(schema.SearchRequirementEducation).TableName()).
-				Where(sq.Eq{"search_uuid": search})
+	// 		d.Search, errTx = database.GetTxX[schema.Search](ctx, tx, q)
+	// 		return
+	// 	},
+	// 	func(tx *sqlx.Tx) (errTx error) {
+	// 		q := sq.
+	// 			Select("*").
+	// 			From(new(schema.SearchRequirementEducation).TableName()).
+	// 			Where(sq.Eq{"search_uuid": search})
 
-			d.Education, errTx = database.SelectTxX[schema.SearchRequirementEducation](ctx, tx, q)
-			return
-		},
-		func(tx *sqlx.Tx) (errTx error) {
-			q := sq.
-				Select("*").
-				From(new(schema.SearchRequirementSpeciality).TableName()).
-				Where(sq.Eq{"search_uuid": search})
+	// 		d.Education, errTx = database.SelectTxX[schema.SearchRequirementEducation](ctx, tx, q)
+	// 		return
+	// 	},
+	// 	func(tx *sqlx.Tx) (errTx error) {
+	// 		q := sq.
+	// 			Select("*").
+	// 			From(new(schema.SearchRequirementSpeciality).TableName()).
+	// 			Where(sq.Eq{"search_uuid": search})
 
-			d.Speciality, errTx = database.SelectTxX[schema.SearchRequirementSpeciality](ctx, tx, q)
+	// 		d.Speciality, errTx = database.SelectTxX[schema.SearchRequirementSpeciality](ctx, tx, q)
+	// 		return
+	// 	},
+	// )
+
+	return
+}
+
+func (r repo) list(ctx context.Context, user uuid.UUID) (d []schema.SearchFullData, err error) {
+	q := sq.
+		Select(
+			"s.id",
+			"s.name",
+			"s.description",
+			"s.price",
+			"s.required_work_experience",
+			"s.created_at",
+			"s.deadline",
+			"jsonb_agg(e.education) as education",
+			"jsonb_agg(sp.speciality) as speciality",
+		).
+		From(new(schema.Search).TableName() + " s").
+		LeftJoin(new(schema.SearchRequirementEducation).TableName() + " e on s.id = e.search_uuid").
+		LeftJoin(new(schema.SearchRequirementSpeciality).TableName() + " sp on s.id = sp.search_uuid").
+		Where(sq.Eq{"creator": user}).
+		GroupBy("s.id")
+
+	dbos, err := database.SelectX[schema.SearchFullDataRaw](ctx, q)
+
+	for _, dbo := range dbos {
+		var e []string
+		err = json.Unmarshal(dbo.Education, &e)
+		if err != nil {
 			return
-		},
-	)
+		}
+
+		e = lo.Filter(e, func(obj string, _ int) bool { return obj != "" })
+
+		var s []string
+		err = json.Unmarshal(dbo.Speciality, &s)
+		if err != nil {
+			return
+		}
+
+		s = lo.Filter(s, func(obj string, _ int) bool { return obj != "" })
+
+		search := schema.SearchFullData{
+			ID:                     dbo.ID,
+			Name:                   dbo.Name,
+			Description:            dbo.Description,
+			Price:                  dbo.Price,
+			RequiredWorkExperience: dbo.RequiredWorkExperience,
+			Deadline:               dbo.Deadline,
+			CreatedAt:              dbo.CreatedAt,
+			Education:              e,
+			Speciality:             s,
+		}
+
+		d = append(d, search)
+	}
 
 	return
 }

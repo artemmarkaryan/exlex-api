@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"net/mail"
 	"time"
 
@@ -263,7 +262,41 @@ func (r *queryResolver) Search(ctx context.Context, id string) (model.Search, er
 
 // Searches is the resolver for the searches field.
 func (r *queryResolver) Searches(ctx context.Context) ([]*model.Search, error) {
-	panic(fmt.Errorf("not implemented: Searches - searches"))
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	searches, err := r.ServiceContainer.
+		Search().
+		List(ctx, claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return lo.Map(searches, func(s search.Search, _ int) *model.Search {
+		var deadline *model.Date
+		if s.Deadline != nil {
+			deadline = &model.Date{
+				Year:  s.Deadline.Year(),
+				Month: int(s.Deadline.Month()),
+				Day:   s.Deadline.Day(),
+			}
+		}
+		return &model.Search{
+			ID:          s.ID.String(),
+			Title:       s.Name,
+			Description: s.Description,
+			Price:       s.Price,
+			Deadline:    deadline,
+			CreatedAt:   s.CreatedAt.String(),
+			Requirements: &model.SearchRequirements{
+				Speciality:     s.RequiredSpecialities,
+				EducationType:  s.RequiredEducation,
+				WorkExperience: s.RequiredWorkExperience,
+			},
+		}
+	}), nil
 }
 
 // SelfCustomerProfile is the resolver for the selfCustomerProfile field.

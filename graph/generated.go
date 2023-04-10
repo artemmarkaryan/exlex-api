@@ -90,8 +90,10 @@ type ComplexityRoot struct {
 	}
 
 	Search struct {
+		CreatedAt    func(childComplexity int) int
 		Deadline     func(childComplexity int) int
 		Description  func(childComplexity int) int
+		ID           func(childComplexity int) int
 		Price        func(childComplexity int) int
 		Requirements func(childComplexity int) int
 		Title        func(childComplexity int) int
@@ -359,6 +361,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Specialities(childComplexity), true
 
+	case "Search.createdAt":
+		if e.complexity.Search.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Search.CreatedAt(childComplexity), true
+
 	case "Search.deadline":
 		if e.complexity.Search.Deadline == nil {
 			break
@@ -372,6 +381,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Search.Description(childComplexity), true
+
+	case "Search.ID":
+		if e.complexity.Search.ID == nil {
+			break
+		}
+
+		return e.complexity.Search.ID(childComplexity), true
 
 	case "Search.price":
 		if e.complexity.Search.Price == nil {
@@ -1946,12 +1962,16 @@ func (ec *executionContext) fieldContext_Query_search(ctx context.Context, field
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "ID":
+				return ec.fieldContext_Search_ID(ctx, field)
 			case "title":
 				return ec.fieldContext_Search_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Search_description(ctx, field)
 			case "price":
 				return ec.fieldContext_Search_price(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Search_createdAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Search_deadline(ctx, field)
 			case "requirements":
@@ -2042,12 +2062,16 @@ func (ec *executionContext) fieldContext_Query_searches(ctx context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "ID":
+				return ec.fieldContext_Search_ID(ctx, field)
 			case "title":
 				return ec.fieldContext_Search_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Search_description(ctx, field)
 			case "price":
 				return ec.fieldContext_Search_price(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Search_createdAt(ctx, field)
 			case "deadline":
 				return ec.fieldContext_Search_deadline(ctx, field)
 			case "requirements":
@@ -2346,6 +2370,50 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Search_ID(ctx context.Context, field graphql.CollectedField, obj *model.Search) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Search_ID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Search_ID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Search",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Search_title(ctx context.Context, field graphql.CollectedField, obj *model.Search) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Search_title(ctx, field)
 	if err != nil {
@@ -2473,6 +2541,50 @@ func (ec *executionContext) fieldContext_Search_price(ctx context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Search_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Search) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Search_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Search_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Search",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5232,6 +5344,13 @@ func (ec *executionContext) _Search(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Search")
+		case "ID":
+
+			out.Values[i] = ec._Search_ID(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "title":
 
 			out.Values[i] = ec._Search_title(ctx, field, obj)
@@ -5249,6 +5368,13 @@ func (ec *executionContext) _Search(ctx context.Context, sel ast.SelectionSet, o
 		case "price":
 
 			out.Values[i] = ec._Search_price(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+
+			out.Values[i] = ec._Search_createdAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

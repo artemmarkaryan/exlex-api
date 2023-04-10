@@ -45,9 +45,11 @@ type Executor struct {
 }
 
 type Search struct {
+	ID           string              `json:"ID"`
 	Title        string              `json:"title"`
 	Description  string              `json:"description"`
 	Price        float64             `json:"price"`
+	CreatedAt    string              `json:"createdAt"`
 	Deadline     *Date               `json:"deadline"`
 	Requirements *SearchRequirements `json:"requirements"`
 }

@@ -98,9 +98,11 @@ input CreateSearchInput {
 }
 
 type Search {
+    ID: ID!
     title: String!
     description: String!
     price: Float!
+    createdAt: String!
     deadline: Date!
     requirements: SearchRequirements!
 }
