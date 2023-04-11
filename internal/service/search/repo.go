@@ -180,6 +180,7 @@ func (r repo) list(ctx context.Context, user uuid.UUID) (d []schema.SearchFullDa
 		From(new(schema.Search).TableName() + " s").
 		LeftJoin(new(schema.SearchRequirementEducation).TableName() + " e on s.id = e.search_uuid").
 		LeftJoin(new(schema.SearchRequirementSpeciality).TableName() + " sp on s.id = sp.search_uuid").
+		OrderBy("s.created_at").
 		Where(sq.Eq{"creator": user}).
 		GroupBy("s.id")
 
