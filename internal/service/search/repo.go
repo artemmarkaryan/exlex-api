@@ -83,6 +83,15 @@ func (repo) delete(ctx context.Context, id uuid.UUID) error {
 
 		func(tx *sqlx.Tx) error {
 			q := sq.
+				Delete(new(schema.SearchApplication).TableName()).
+				Where(sq.Eq{"search_id": id})
+
+			_, errTx := database.DeleteTxX(ctx, tx, q)
+			return errTx
+		},
+
+		func(tx *sqlx.Tx) error {
+			q := sq.
 				Delete(new(schema.SearchRequirementSpeciality).TableName()).
 				Where(sq.Eq{"search_uuid": id})
 
