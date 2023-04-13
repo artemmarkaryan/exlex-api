@@ -69,6 +69,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		ApplyForSearch     func(childComplexity int, searchID string, comment *string) int
 		CreateSearch       func(childComplexity int, data model.CreateSearchInput) int
 		DeleteSearch       func(childComplexity int, id string) int
 		Login              func(childComplexity int, email string, debug bool) int
@@ -79,14 +80,15 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Authenticated       func(childComplexity int) int
-		EducationTypes      func(childComplexity int) int
-		Live                func(childComplexity int) int
-		Search              func(childComplexity int, id string) int
-		Searches            func(childComplexity int) int
-		SelfCustomerProfile func(childComplexity int) int
-		SelfExecutorProfile func(childComplexity int) int
-		Specialities        func(childComplexity int) int
+		Authenticated             func(childComplexity int) int
+		CustomerSearches          func(childComplexity int) int
+		EducationTypes            func(childComplexity int) int
+		ExecutorAvailableSearches func(childComplexity int) int
+		Live                      func(childComplexity int) int
+		Search                    func(childComplexity int, id string) int
+		SelfCustomerProfile       func(childComplexity int) int
+		SelfExecutorProfile       func(childComplexity int) int
+		Specialities              func(childComplexity int) int
 	}
 
 	Search struct {
@@ -119,6 +121,7 @@ type MutationResolver interface {
 	SetExecutorProfile(ctx context.Context, data model.SetExecutorProfileData) (bool, error)
 	CreateSearch(ctx context.Context, data model.CreateSearchInput) (string, error)
 	DeleteSearch(ctx context.Context, id string) (bool, error)
+	ApplyForSearch(ctx context.Context, searchID string, comment *string) (string, error)
 }
 type QueryResolver interface {
 	Live(ctx context.Context) (bool, error)
@@ -126,7 +129,8 @@ type QueryResolver interface {
 	Specialities(ctx context.Context) ([]model.Speciality, error)
 	EducationTypes(ctx context.Context) ([]model.EducationType, error)
 	Search(ctx context.Context, id string) (model.Search, error)
-	Searches(ctx context.Context) ([]*model.Search, error)
+	CustomerSearches(ctx context.Context) ([]*model.Search, error)
+	ExecutorAvailableSearches(ctx context.Context) ([]*model.Search, error)
 	SelfCustomerProfile(ctx context.Context) (model.Customer, error)
 	SelfExecutorProfile(ctx context.Context) (model.Executor, error)
 }
@@ -215,6 +219,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Executor.WorkExperience(childComplexity), true
+
+	case "Mutation.applyForSearch":
+		if e.complexity.Mutation.ApplyForSearch == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_applyForSearch_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ApplyForSearch(childComplexity, args["searchID"].(string), args["comment"].(*string)), true
 
 	case "Mutation.createSearch":
 		if e.complexity.Mutation.CreateSearch == nil {
@@ -307,12 +323,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Authenticated(childComplexity), true
 
+	case "Query.customerSearches":
+		if e.complexity.Query.CustomerSearches == nil {
+			break
+		}
+
+		return e.complexity.Query.CustomerSearches(childComplexity), true
+
 	case "Query.educationTypes":
 		if e.complexity.Query.EducationTypes == nil {
 			break
 		}
 
 		return e.complexity.Query.EducationTypes(childComplexity), true
+
+	case "Query.executorAvailableSearches":
+		if e.complexity.Query.ExecutorAvailableSearches == nil {
+			break
+		}
+
+		return e.complexity.Query.ExecutorAvailableSearches(childComplexity), true
 
 	case "Query.live":
 		if e.complexity.Query.Live == nil {
@@ -332,13 +362,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Search(childComplexity, args["id"].(string)), true
-
-	case "Query.searches":
-		if e.complexity.Query.Searches == nil {
-			break
-		}
-
-		return e.complexity.Query.Searches(childComplexity), true
 
 	case "Query.selfCustomerProfile":
 		if e.complexity.Query.SelfCustomerProfile == nil {
@@ -549,6 +572,30 @@ func (ec *executionContext) dir_role_args(ctx context.Context, rawArgs map[strin
 		}
 	}
 	args["role"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_applyForSearch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["searchID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("searchID"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["comment"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["comment"] = arg1
 	return args, nil
 }
 
@@ -1690,6 +1737,90 @@ func (ec *executionContext) fieldContext_Mutation_deleteSearch(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_applyForSearch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_applyForSearch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().ApplyForSearch(rctx, fc.Args["searchID"].(string), fc.Args["comment"].(*string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "executor")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Role == nil {
+				return nil, errors.New("directive role is not implemented")
+			}
+			return ec.directives.Role(ctx, nil, directive0, role)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive1)
+		}
+
+		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_applyForSearch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_applyForSearch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_live(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_live(ctx, field)
 	if err != nil {
@@ -1994,8 +2125,8 @@ func (ec *executionContext) fieldContext_Query_search(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_searches(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_searches(ctx, field)
+func (ec *executionContext) _Query_customerSearches(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_customerSearches(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2009,7 +2140,7 @@ func (ec *executionContext) _Query_searches(ctx context.Context, field graphql.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Searches(rctx)
+			return ec.resolvers.Query().CustomerSearches(rctx)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "customer")
@@ -2054,7 +2185,96 @@ func (ec *executionContext) _Query_searches(ctx context.Context, field graphql.C
 	return ec.marshalNSearch2ᚕᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐSearch(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_searches(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_customerSearches(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Search_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Search_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Search_description(ctx, field)
+			case "price":
+				return ec.fieldContext_Search_price(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Search_createdAt(ctx, field)
+			case "deadline":
+				return ec.fieldContext_Search_deadline(ctx, field)
+			case "requirements":
+				return ec.fieldContext_Search_requirements(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Search", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_executorAvailableSearches(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_executorAvailableSearches(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().ExecutorAvailableSearches(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalORole2ᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐRole(ctx, "executor")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Role == nil {
+				return nil, errors.New("directive role is not implemented")
+			}
+			return ec.directives.Role(ctx, nil, directive0, role)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive1)
+		}
+
+		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.Search); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/artemmarkaryan/exlex-backend/graph/model.Search`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Search)
+	fc.Result = res
+	return ec.marshalNSearch2ᚕᚖgithubᚗcomᚋartemmarkaryanᚋexlexᚑbackendᚋgraphᚋmodelᚐSearch(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_executorAvailableSearches(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -5128,6 +5348,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_deleteSearch(ctx, field)
 			})
 
+		case "applyForSearch":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_applyForSearch(ctx, field)
+			})
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5254,7 +5480,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "searches":
+		case "customerSearches":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -5263,7 +5489,27 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_searches(ctx, field)
+				res = ec._Query_customerSearches(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "executorAvailableSearches":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_executorAvailableSearches(ctx, field)
 				return res
 			}
 

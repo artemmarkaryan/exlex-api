@@ -9,7 +9,8 @@ type Query {
     educationTypes: [EducationType!]!
 
     search(id: ID!): Search! @role(role: customer) @authenticated
-    searches: [Search]! @role(role: customer) @authenticated
+    customerSearches: [Search]! @role(role: customer) @authenticated
+    executorAvailableSearches: [Search]! @role(role: executor) @authenticated
 
     selfCustomerProfile: Customer! @role(role: customer) @authenticated 
     selfExecutorProfile: Executor! @role(role: executor) @authenticated 
@@ -25,6 +26,8 @@ type Mutation {
 
     createSearch(data: CreateSearchInput!): ID! @role(role:customer) @authenticated
     deleteSearch(id: ID!): Boolean! @role(role:customer) @authenticated
+
+    applyForSearch(searchID: ID!, comment: String): ID! @role(role:executor) @authenticated
 }
 
 

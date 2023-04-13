@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
@@ -76,8 +77,8 @@ func (s Service) Get(ctx context.Context, user, search uuid.UUID) (se Search, er
 	return dboToSearch(dbo), nil
 }
 
-func (s Service) List(ctx context.Context, user uuid.UUID) (se []Search, err error) {
-	dbos, err := s.repo.list(ctx, user)
+func (s Service) ListByAuthor(ctx context.Context, user uuid.UUID) (se []Search, err error) {
+	dbos, err := s.repo.listByAuthor(ctx, user)
 	if err != nil {
 		return
 	}
@@ -85,6 +86,35 @@ func (s Service) List(ctx context.Context, user uuid.UUID) (se []Search, err err
 	se = lo.Map(dbos, func(o schema.SearchFullData, _ int) Search {
 		return dboToSearch(o)
 	})
+
+	return
+}
+
+// todo: apply fiters, now all are available
+func (s Service) ListAvailableForApplication(ctx context.Context, user uuid.UUID) (se []Search, err error) {
+	dbos, err := s.repo.listAvailableForApplication(ctx, user)
+	if err != nil {
+		return
+	}
+
+	se = lo.Map(dbos, func(o schema.SearchFullData, _ int) Search {
+		return dboToSearch(o)
+	})
+
+	return
+}
+
+type SearchApplicationRequest struct {
+	SearchID uuid.UUID
+	UserID   uuid.UUID
+	Comment  *string
+}
+
+func (s Service) Apply(ctx context.Context, r SearchApplicationRequest) (applicationID uuid.UUID, err error) {
+	applicationID, err = s.repo.apply(ctx, r)
+	if err != nil && strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+		err = ErrApplicationAlreadyExists
+	}
 
 	return
 }

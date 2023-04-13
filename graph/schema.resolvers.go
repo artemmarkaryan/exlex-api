@@ -179,6 +179,32 @@ func (r *mutationResolver) DeleteSearch(ctx context.Context, id string) (bool, e
 	return err == nil, err
 }
 
+// ApplyForSearch is the resolver for the applyForSearch field.
+func (r *mutationResolver) ApplyForSearch(ctx context.Context, searchID string, comment *string) (string, error) {
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	searchUUID, err := uuid.Parse(searchID)
+	if err != nil {
+		return "", ErrBadUUID
+	}
+
+	applicationID, err := r.ServiceContainer.
+		Search().
+		Apply(ctx, search.SearchApplicationRequest{
+			SearchID: searchUUID,
+			UserID:   claims.UserID,
+			Comment:  comment,
+		})
+	if err != nil {
+		return "", err
+	}
+
+	return applicationID.String(), nil
+}
+
 // Live is the resolver for the live field.
 func (r *queryResolver) Live(ctx context.Context) (bool, error) {
 	return true, nil
@@ -260,8 +286,8 @@ func (r *queryResolver) Search(ctx context.Context, id string) (model.Search, er
 	return response, nil
 }
 
-// Searches is the resolver for the searches field.
-func (r *queryResolver) Searches(ctx context.Context) ([]*model.Search, error) {
+// CustomerSearches is the resolver for the customerSearches field.
+func (r *queryResolver) CustomerSearches(ctx context.Context) ([]*model.Search, error) {
 	claims, err := auth.FromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -269,7 +295,7 @@ func (r *queryResolver) Searches(ctx context.Context) ([]*model.Search, error) {
 
 	searches, err := r.ServiceContainer.
 		Search().
-		List(ctx, claims.UserID)
+		ListByAuthor(ctx, claims.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -283,6 +309,46 @@ func (r *queryResolver) Searches(ctx context.Context) ([]*model.Search, error) {
 				Day:   s.Deadline.Day(),
 			}
 		}
+		return &model.Search{
+			ID:          s.ID.String(),
+			Title:       s.Name,
+			Description: s.Description,
+			Price:       s.Price,
+			Deadline:    deadline,
+			CreatedAt:   s.CreatedAt.String(),
+			Requirements: &model.SearchRequirements{
+				Speciality:     s.RequiredSpecialities,
+				EducationType:  s.RequiredEducation,
+				WorkExperience: s.RequiredWorkExperience,
+			},
+		}
+	}), nil
+}
+
+// ExecutorAvailableSearches is the resolver for the executorAvailableSearches field.
+func (r *queryResolver) ExecutorAvailableSearches(ctx context.Context) ([]*model.Search, error) {
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	searches, err := r.ServiceContainer.
+		Search().
+		ListAvailableForApplication(ctx, claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return lo.Map(searches, func(s search.Search, _ int) *model.Search {
+		var deadline *model.Date
+		if s.Deadline != nil {
+			deadline = &model.Date{
+				Year:  s.Deadline.Year(),
+				Month: int(s.Deadline.Month()),
+				Day:   s.Deadline.Day(),
+			}
+		}
+		
 		return &model.Search{
 			ID:          s.ID.String(),
 			Title:       s.Name,

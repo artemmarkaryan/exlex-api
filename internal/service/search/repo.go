@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
+	"golang.org/x/exp/slices"
 )
 
 type repo struct{}
@@ -164,7 +165,7 @@ func (r repo) get(ctx context.Context, search uuid.UUID) (d schema.SearchFullDat
 	return
 }
 
-func (r repo) list(ctx context.Context, user uuid.UUID) (d []schema.SearchFullData, err error) {
+func (r repo) listAvailableForApplication(ctx context.Context, user uuid.UUID) (d []schema.SearchFullData, err error) {
 	q := sq.
 		Select(
 			"s.id",
@@ -180,11 +181,22 @@ func (r repo) list(ctx context.Context, user uuid.UUID) (d []schema.SearchFullDa
 		From(new(schema.Search).TableName() + " s").
 		LeftJoin(new(schema.SearchRequirementEducation).TableName() + " e on s.id = e.search_uuid").
 		LeftJoin(new(schema.SearchRequirementSpeciality).TableName() + " sp on s.id = sp.search_uuid").
-		OrderBy("s.created_at").
-		Where(sq.Eq{"creator": user}).
+		LeftJoin(new(schema.SearchApplication).TableName() + " sa on s.id = sa.search_id").
+		Where(sq.Or{
+			sq.Eq{"sa.id": nil},          // doesn't have application
+			sq.NotEq{"sa.user_id": user}, // is applied by another user
+		}).
+		OrderBy("s.created_at desc").
 		GroupBy("s.id")
 
 	dbos, err := database.SelectX[schema.SearchFullDataRaw](ctx, q)
+
+	filter := func(s []string) []string {
+		slices.Sort(s)
+		s = slices.Compact(s)
+		s = lo.Filter(s, func(obj string, _ int) bool { return obj != "" })
+		return s
+	}
 
 	for _, dbo := range dbos {
 		var e []string
@@ -193,15 +205,11 @@ func (r repo) list(ctx context.Context, user uuid.UUID) (d []schema.SearchFullDa
 			return
 		}
 
-		e = lo.Filter(e, func(obj string, _ int) bool { return obj != "" })
-
 		var s []string
 		err = json.Unmarshal(dbo.Speciality, &s)
 		if err != nil {
 			return
 		}
-
-		s = lo.Filter(s, func(obj string, _ int) bool { return obj != "" })
 
 		search := schema.SearchFullData{
 			ID:                     dbo.ID,
@@ -211,12 +219,91 @@ func (r repo) list(ctx context.Context, user uuid.UUID) (d []schema.SearchFullDa
 			RequiredWorkExperience: dbo.RequiredWorkExperience,
 			Deadline:               dbo.Deadline,
 			CreatedAt:              dbo.CreatedAt,
-			Education:              e,
-			Speciality:             s,
+			Education:              filter(e),
+			Speciality:             filter(s),
 		}
 
 		d = append(d, search)
 	}
 
+	return
+}
+
+func (r repo) listByAuthor(ctx context.Context, user uuid.UUID) (d []schema.SearchFullData, err error) {
+	q := sq.
+		Select(
+			"s.id",
+			"s.name",
+			"s.description",
+			"s.price",
+			"s.required_work_experience",
+			"s.created_at",
+			"s.deadline",
+			"jsonb_agg(e.education) as education",
+			"jsonb_agg(sp.speciality) as speciality",
+		).
+		From(new(schema.Search).TableName() + " s").
+		LeftJoin(new(schema.SearchRequirementEducation).TableName() + " e on s.id = e.search_uuid").
+		LeftJoin(new(schema.SearchRequirementSpeciality).TableName() + " sp on s.id = sp.search_uuid").
+		OrderBy("s.created_at desc").
+		Where(sq.Eq{"creator": user}).
+		GroupBy("s.id")
+
+	dbos, err := database.SelectX[schema.SearchFullDataRaw](ctx, q)
+
+	filter := func(s []string) []string {
+		slices.Sort(s)
+		s = slices.Compact(s)
+		s = lo.Filter(s, func(obj string, _ int) bool { return obj != "" })
+		return s
+	}
+
+	for _, dbo := range dbos {
+		var e []string
+		err = json.Unmarshal(dbo.Education, &e)
+		if err != nil {
+			return
+		}
+
+		var s []string
+		err = json.Unmarshal(dbo.Speciality, &s)
+		if err != nil {
+			return
+		}
+
+		search := schema.SearchFullData{
+			ID:                     dbo.ID,
+			Name:                   dbo.Name,
+			Description:            dbo.Description,
+			Price:                  dbo.Price,
+			RequiredWorkExperience: dbo.RequiredWorkExperience,
+			Deadline:               dbo.Deadline,
+			CreatedAt:              dbo.CreatedAt,
+			Education:              filter(e),
+			Speciality:             filter(s),
+		}
+
+		d = append(d, search)
+	}
+
+	return
+}
+
+func (repo) apply(ctx context.Context, r SearchApplicationRequest) (applicationID uuid.UUID, err error) {
+	values := map[string]interface{}{
+		"search_id": r.SearchID,
+		"user_id":   r.UserID,
+	}
+
+	if r.Comment != nil {
+		values["comment"] = *r.Comment
+	}
+
+	q := sq.
+		Insert(new(schema.SearchApplication).TableName()).
+		SetMap(values).
+		Suffix("returning id")
+
+	applicationID, err = database.GetFromInsertX[uuid.UUID](ctx, q)
 	return
 }
