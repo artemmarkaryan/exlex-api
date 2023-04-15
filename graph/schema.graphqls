@@ -8,8 +8,9 @@ type Query {
     specialities: [Speciality!]!
     educationTypes: [EducationType!]!
 
-    search(id: ID!): Search! @role(role: customer) @authenticated
+    customerSearch(id: ID!): Search! @role(role: customer) @authenticated
     customerSearches: [Search]! @role(role: customer) @authenticated
+    
     executorAvailableSearches: [Search]! @role(role: executor) @authenticated
 
     selfCustomerProfile: Customer! @role(role: customer) @authenticated 

@@ -14,6 +14,7 @@ import (
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/artemmarkaryan/exlex-backend/internal/service/search"
 	user_profile "github.com/artemmarkaryan/exlex-backend/internal/service/user-profile"
+	"github.com/artemmarkaryan/ptr"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"golang.org/x/exp/slices"
@@ -250,8 +251,8 @@ func (r *queryResolver) EducationTypes(ctx context.Context) ([]model.EducationTy
 	return lo.Map(s, f), nil
 }
 
-// Search is the resolver for the search field.
-func (r *queryResolver) Search(ctx context.Context, id string) (model.Search, error) {
+// CustomerSearch is the resolver for the customerSearch field.
+func (r *queryResolver) CustomerSearch(ctx context.Context, id string) (model.Search, error) {
 	claims, err := auth.FromContext(ctx)
 	if err != nil {
 		return model.Search{}, err
@@ -262,12 +263,20 @@ func (r *queryResolver) Search(ctx context.Context, id string) (model.Search, er
 		return model.Search{}, ErrBadUUID
 	}
 
-	s, err := r.ServiceContainer.Search().Get(ctx, claims.UserID, searchID)
+	s, err := r.ServiceContainer.
+		Search().
+		Get(ctx, claims.UserID, searchID)
+
+	if err != nil {
+		return model.Search{}, err
+	}
 
 	response := model.Search{
+		ID:          s.ID.String(),
 		Title:       s.Name,
 		Description: s.Description,
 		Price:       s.Price,
+		CreatedAt:   s.CreatedAt.String(),
 		Requirements: &model.SearchRequirements{
 			Speciality:     s.RequiredSpecialities,
 			EducationType:  s.RequiredEducation,
@@ -276,11 +285,7 @@ func (r *queryResolver) Search(ctx context.Context, id string) (model.Search, er
 	}
 
 	if s.Deadline != nil {
-		response.Deadline = &model.Date{
-			Year:  s.Deadline.Year(),
-			Month: int(s.Deadline.Month()),
-			Day:   s.Deadline.Day(),
-		}
+		response.Deadline = ptr.P(timeToDate(*s.Deadline))
 	}
 
 	return response, nil
@@ -348,7 +353,7 @@ func (r *queryResolver) ExecutorAvailableSearches(ctx context.Context) ([]*model
 				Day:   s.Deadline.Day(),
 			}
 		}
-		
+
 		return &model.Search{
 			ID:          s.ID.String(),
 			Title:       s.Name,
@@ -416,3 +421,10 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
