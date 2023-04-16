@@ -14,7 +14,6 @@ import (
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/artemmarkaryan/exlex-backend/internal/service/search"
 	user_profile "github.com/artemmarkaryan/exlex-backend/internal/service/user-profile"
-	"github.com/artemmarkaryan/ptr"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"golang.org/x/exp/slices"
@@ -66,6 +65,56 @@ func (r *mutationResolver) SetCustomerProfile(ctx context.Context, data model.Se
 	err = r.ServiceContainer.
 		UserProfile().
 		UpdateCustomerProfile(ctx, updateData)
+
+	return err == nil, err
+}
+
+// CreateSearch is the resolver for the createSearch field.
+func (r *mutationResolver) CreateSearch(ctx context.Context, data model.CreateSearchInput) (string, error) {
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	d := search.CreateSearchRequest{
+		Creator:     claims.UserID,
+		Name:        data.Title,
+		Description: data.Description,
+		Price:       data.Price,
+	}
+
+	{
+		dl := data.Deadline
+		dt := time.Date(dl.Year, time.Month(dl.Month), dl.Day, 0, 0, 0, 0, time.UTC)
+		d.Deadline = &dt
+	}
+
+	{
+		req := data.Requirements
+		d.RequiredSpecialities = req.Speciality
+		d.RequiredEducation = req.EducationType
+		d.RequiredWorkExperience = req.WorkExperience
+	}
+
+	id, err := r.ServiceContainer.Search().Create(ctx, d)
+	return id.String(), err
+}
+
+// DeleteSearch is the resolver for the deleteSearch field.
+func (r *mutationResolver) DeleteSearch(ctx context.Context, id string) (bool, error) {
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	searchID, err := uuid.Parse(id)
+	if err != nil {
+		return false, ErrBadUUID
+	}
+
+	err = r.ServiceContainer.
+		Search().
+		Delete(ctx, claims.UserID, searchID)
 
 	return err == nil, err
 }
@@ -127,55 +176,6 @@ func (r *mutationResolver) SetExecutorProfile(ctx context.Context, data model.Se
 	err = r.ServiceContainer.
 		UserProfile().
 		UpdateExecutorProfile(ctx, updateData)
-
-	return err == nil, err
-}
-
-// CreateSearch is the resolver for the createSearch field.
-func (r *mutationResolver) CreateSearch(ctx context.Context, data model.CreateSearchInput) (string, error) {
-	claims, err := auth.FromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	d := search.CreateSearch{
-		Creator:     claims.UserID,
-		Name:        data.Title,
-		Description: data.Description,
-		Price:       data.Price,
-	}
-
-	if data.Deadline != nil {
-		dl := *data.Deadline
-		dt := time.Date(dl.Year, time.Month(dl.Month), dl.Day, 0, 0, 0, 0, time.UTC)
-		d.Deadline = &dt
-	}
-
-	if req := data.Requirements; req != nil {
-		d.RequiredSpecialities = req.Speciality
-		d.RequiredEducation = req.EducationType
-		d.RequiredWorkExperience = req.WorkExperience
-	}
-
-	id, err := r.ServiceContainer.Search().Create(ctx, d)
-	return id.String(), err
-}
-
-// DeleteSearch is the resolver for the deleteSearch field.
-func (r *mutationResolver) DeleteSearch(ctx context.Context, id string) (bool, error) {
-	claims, err := auth.FromContext(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	searchID, err := uuid.Parse(id)
-	if err != nil {
-		return false, ErrBadUUID
-	}
-
-	err = r.ServiceContainer.
-		Search().
-		Delete(ctx, claims.UserID, searchID)
 
 	return err == nil, err
 }
@@ -251,6 +251,25 @@ func (r *queryResolver) EducationTypes(ctx context.Context) ([]model.EducationTy
 	return lo.Map(s, f), nil
 }
 
+// SelfCustomerProfile is the resolver for the selfCustomerProfile field.
+func (r *queryResolver) SelfCustomerProfile(ctx context.Context) (c model.Customer, err error) {
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return
+	}
+
+	customerProfile, err := r.ServiceContainer.
+		UserProfile().
+		GetCustomerProfile(ctx, claims.UserID)
+
+	if err != nil {
+		return
+	}
+
+	c = model.Customer{FullName: customerProfile.FullName}
+	return
+}
+
 // CustomerSearch is the resolver for the customerSearch field.
 func (r *queryResolver) CustomerSearch(ctx context.Context, id string) (model.Search, error) {
 	claims, err := auth.FromContext(ctx)
@@ -277,7 +296,7 @@ func (r *queryResolver) CustomerSearch(ctx context.Context, id string) (model.Se
 		Description: s.Description,
 		Price:       s.Price,
 		CreatedAt:   s.CreatedAt.String(),
-		Requirements: &model.SearchRequirements{
+		Requirements: model.SearchRequirements{
 			Speciality:     s.RequiredSpecialities,
 			EducationType:  s.RequiredEducation,
 			WorkExperience: s.RequiredWorkExperience,
@@ -285,10 +304,47 @@ func (r *queryResolver) CustomerSearch(ctx context.Context, id string) (model.Se
 	}
 
 	if s.Deadline != nil {
-		response.Deadline = ptr.P(timeToDate(*s.Deadline))
+		response.Deadline = timeToDate(*s.Deadline)
 	}
 
 	return response, nil
+}
+
+// CustomerSearchApplications is the resolver for the customerSearchApplications field.
+func (r *queryResolver) CustomerSearchApplications(ctx context.Context, id string) ([]model.Application, error) {
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	searchID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, err
+	}
+
+	apps, err := r.ServiceContainer.
+		Search().
+		ListApplicants(ctx, search.ListApplicantsRequest{
+			SearchID: searchID,
+			UserID:   claims.UserID,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	var dtos = make([]model.Application, len(apps))
+	for i := range apps {
+		dtos[i].Applicant.FullName = apps[i].FullName
+		dtos[i].Applicant.EducationTypeID = apps[i].Education
+		dtos[i].Applicant.Specialization = apps[i].Speciality
+		dtos[i].Applicant.WorkExperience = apps[i].Experience
+
+		dtos[i].ID = apps[i].ID.String()
+		dtos[i].CreatedAt = apps[i].CreatedAt.String()
+		dtos[i].Comment = apps[i].Comment
+	}
+
+	return dtos, nil
 }
 
 // CustomerSearches is the resolver for the customerSearches field.
@@ -306,9 +362,9 @@ func (r *queryResolver) CustomerSearches(ctx context.Context) ([]*model.Search, 
 	}
 
 	return lo.Map(searches, func(s search.Search, _ int) *model.Search {
-		var deadline *model.Date
+		var deadline model.Date
 		if s.Deadline != nil {
-			deadline = &model.Date{
+			deadline = model.Date{
 				Year:  s.Deadline.Year(),
 				Month: int(s.Deadline.Month()),
 				Day:   s.Deadline.Day(),
@@ -321,72 +377,13 @@ func (r *queryResolver) CustomerSearches(ctx context.Context) ([]*model.Search, 
 			Price:       s.Price,
 			Deadline:    deadline,
 			CreatedAt:   s.CreatedAt.String(),
-			Requirements: &model.SearchRequirements{
+			Requirements: model.SearchRequirements{
 				Speciality:     s.RequiredSpecialities,
 				EducationType:  s.RequiredEducation,
 				WorkExperience: s.RequiredWorkExperience,
 			},
 		}
 	}), nil
-}
-
-// ExecutorAvailableSearches is the resolver for the executorAvailableSearches field.
-func (r *queryResolver) ExecutorAvailableSearches(ctx context.Context) ([]*model.Search, error) {
-	claims, err := auth.FromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	searches, err := r.ServiceContainer.
-		Search().
-		ListAvailableForApplication(ctx, claims.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	return lo.Map(searches, func(s search.Search, _ int) *model.Search {
-		var deadline *model.Date
-		if s.Deadline != nil {
-			deadline = &model.Date{
-				Year:  s.Deadline.Year(),
-				Month: int(s.Deadline.Month()),
-				Day:   s.Deadline.Day(),
-			}
-		}
-
-		return &model.Search{
-			ID:          s.ID.String(),
-			Title:       s.Name,
-			Description: s.Description,
-			Price:       s.Price,
-			Deadline:    deadline,
-			CreatedAt:   s.CreatedAt.String(),
-			Requirements: &model.SearchRequirements{
-				Speciality:     s.RequiredSpecialities,
-				EducationType:  s.RequiredEducation,
-				WorkExperience: s.RequiredWorkExperience,
-			},
-		}
-	}), nil
-}
-
-// SelfCustomerProfile is the resolver for the selfCustomerProfile field.
-func (r *queryResolver) SelfCustomerProfile(ctx context.Context) (c model.Customer, err error) {
-	claims, err := auth.FromContext(ctx)
-	if err != nil {
-		return
-	}
-
-	customerProfile, err := r.ServiceContainer.
-		UserProfile().
-		GetCustomerProfile(ctx, claims.UserID)
-
-	if err != nil {
-		return
-	}
-
-	c = model.Customer{FullName: customerProfile.FullName}
-	return
 }
 
 // SelfExecutorProfile is the resolver for the selfExecutorProfile field.
@@ -405,12 +402,52 @@ func (r *queryResolver) SelfExecutorProfile(ctx context.Context) (e model.Execut
 	}
 
 	e = model.Executor{
-		FullName:        &customerProfile.FullName,
-		WorkExperience:  &customerProfile.WorkExperience,
-		EducationTypeID: &customerProfile.EducationTypeID,
+		FullName:        customerProfile.FullName,
+		WorkExperience:  customerProfile.WorkExperience,
+		EducationTypeID: customerProfile.EducationTypeID,
 		Specialization:  customerProfile.Specialization,
 	}
 	return
+}
+
+// ExecutorAvailableSearches is the resolver for the executorAvailableSearches field.
+func (r *queryResolver) ExecutorAvailableSearches(ctx context.Context) ([]*model.Search, error) {
+	claims, err := auth.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	searches, err := r.ServiceContainer.
+		Search().
+		ListAvailableForApplication(ctx, claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return lo.Map(searches, func(s search.Search, _ int) *model.Search {
+		var deadline model.Date
+		if s.Deadline != nil {
+			deadline = model.Date{
+				Year:  s.Deadline.Year(),
+				Month: int(s.Deadline.Month()),
+				Day:   s.Deadline.Day(),
+			}
+		}
+
+		return &model.Search{
+			ID:          s.ID.String(),
+			Title:       s.Name,
+			Description: s.Description,
+			Price:       s.Price,
+			Deadline:    deadline,
+			CreatedAt:   s.CreatedAt.String(),
+			Requirements: model.SearchRequirements{
+				Speciality:     s.RequiredSpecialities,
+				EducationType:  s.RequiredEducation,
+				WorkExperience: s.RequiredWorkExperience,
+			},
+		}
+	}), nil
 }
 
 // Mutation returns MutationResolver implementation.
@@ -421,10 +458,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.

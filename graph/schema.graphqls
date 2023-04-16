@@ -2,32 +2,36 @@ directive @authenticated on FIELD_DEFINITION
 directive @role(role: Role) on FIELD_DEFINITION
 
 type Query {
+    # common
     live: Boolean!
     authenticated: Boolean! @authenticated
-
     specialities: [Speciality!]!
     educationTypes: [EducationType!]!
 
+    # customer queries
+    selfCustomerProfile: Customer! @role(role: customer) @authenticated 
     customerSearch(id: ID!): Search! @role(role: customer) @authenticated
+    customerSearchApplications(id: ID!): [Application!]! @role(role: customer) @authenticated
     customerSearches: [Search]! @role(role: customer) @authenticated
     
-    executorAvailableSearches: [Search]! @role(role: executor) @authenticated
-
-    selfCustomerProfile: Customer! @role(role: customer) @authenticated 
+    # executor queries
     selfExecutorProfile: Executor! @role(role: executor) @authenticated 
+    executorAvailableSearches: [Search]! @role(role: executor) @authenticated
 }
 
 type Mutation {
+    # common
     login(email: String!, debug: Boolean!): Boolean!
     signup(email: String!, role: Role!, debug: Boolean!): Boolean!
     verifyOTP(email: String!, otp: String!): String!
 
+    # customer mutations
     setCustomerProfile(data: SetCustomerProfileData!): Boolean!  @role(role: customer) @authenticated
-    setExecutorProfile(data: SetExecutorProfileData!): Boolean!  @role(role: executor) @authenticated
-
     createSearch(data: CreateSearchInput!): ID! @role(role:customer) @authenticated
     deleteSearch(id: ID!): Boolean! @role(role:customer) @authenticated
 
+    # executor mutations
+    setExecutorProfile(data: SetExecutorProfileData!): Boolean!  @role(role: executor) @authenticated
     applyForSearch(searchID: ID!, comment: String): ID! @role(role:executor) @authenticated
 }
 
@@ -53,9 +57,9 @@ input SetExecutorProfileData {
 }
 
 type Executor {
-    fullName: String
-    workExperience: Int
-    educationTypeID: ID
+    fullName: String!
+    workExperience: Int!
+    educationTypeID: ID!
     specialization: [ID!]!
 }
 
@@ -109,4 +113,11 @@ type Search {
     createdAt: String!
     deadline: Date!
     requirements: SearchRequirements!
+}
+
+type Application {
+    id: ID!,
+    applicant: Executor!,
+    createdAt: String!,
+    comment: String,
 }

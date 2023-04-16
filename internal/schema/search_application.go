@@ -16,3 +16,14 @@ type SearchApplication struct {
 }
 
 func (a SearchApplication) TableName() string { return "search_application" }
+
+type SearchApplicationRaw struct {
+	ApplicationID uuid.UUID      `db:"application_id"`
+	UserID        uuid.UUID      `db:"user_id"`
+	CreatedAt     time.Time      `db:"created_at"`
+	Comment       sql.NullString `db:"comment"`
+	Education     string         `db:"education"`
+	FullName      string         `db:"full_name"`
+	Experience    int            `db:"experience_years"`
+	Specialities  []byte         `db:"speciality"`
+}

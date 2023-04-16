@@ -2,14 +2,9 @@ package search
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
-	"time"
 
-	"github.com/artemmarkaryan/exlex-backend/internal/schema"
 	"github.com/google/uuid"
-	"github.com/samber/lo"
-	"golang.org/x/exp/slices"
 )
 
 type Service struct {
@@ -21,65 +16,7 @@ func MakeService() (s Service) {
 	return
 }
 
-type CreateSearch struct {
-	Creator                uuid.UUID
-	Name                   string
-	Description            string
-	Price                  float64
-	RequiredWorkExperience int
-	Deadline               *time.Time
-	RequiredSpecialities   []string
-	RequiredEducation      []string
-}
-
-type Search struct {
-	ID                     uuid.UUID
-	Name                   string
-	Description            string
-	Price                  float64
-	RequiredWorkExperience int
-	Deadline               *time.Time
-	CreatedAt              time.Time
-	RequiredSpecialities   []string
-	RequiredEducation      []string
-}
-
-func (s *Search) fillFromRaw(dbo schema.SearchFullDataRaw) (err error) {
-	var educations []string
-	err = json.Unmarshal(dbo.Education, &educations)
-	if err != nil {
-		return
-	}
-
-	var specialities []string
-	err = json.Unmarshal(dbo.Speciality, &specialities)
-	if err != nil {
-		return
-	}
-
-	filter := func(s []string) []string {
-		slices.Sort(s)
-		s = slices.Compact(s)
-		s = lo.Filter(s, func(obj string, _ int) bool { return obj != "" })
-		return s
-	}
-
-	*s = Search{
-		ID:                     dbo.ID,
-		Name:                   dbo.Name,
-		Description:            dbo.Description,
-		Price:                  dbo.Price,
-		RequiredWorkExperience: dbo.RequiredWorkExperience,
-		Deadline:               dbo.Deadline,
-		CreatedAt:              dbo.CreatedAt,
-		RequiredEducation:      filter(educations),
-		RequiredSpecialities:   filter(specialities),
-	}
-
-	return nil
-}
-
-func (s Service) Create(ctx context.Context, d CreateSearch) (uuid.UUID, error) {
+func (s Service) Create(ctx context.Context, d CreateSearchRequest) (uuid.UUID, error) {
 	id, err := s.repo.create(ctx, d)
 	if err != nil {
 		return uuid.Nil, err
@@ -149,12 +86,6 @@ func (s Service) ListAvailableForApplication(ctx context.Context, user uuid.UUID
 	return
 }
 
-type SearchApplicationRequest struct {
-	SearchID uuid.UUID
-	UserID   uuid.UUID
-	Comment  *string
-}
-
 func (s Service) Apply(ctx context.Context, r SearchApplicationRequest) (applicationID uuid.UUID, err error) {
 	applicationID, err = s.repo.apply(ctx, r)
 	if err != nil && strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
@@ -162,4 +93,26 @@ func (s Service) Apply(ctx context.Context, r SearchApplicationRequest) (applica
 	}
 
 	return
+}
+
+func (s Service) ListApplicants(ctx context.Context, r ListApplicantsRequest) ([]Application, error) {
+	err := s.repo.checkCreator(ctx, r.UserID, r.SearchID)
+	if err != nil {
+		return nil, err
+	}
+
+	dbos, err := s.repo.listApplications(ctx, r.SearchID)
+	if err != nil {
+		return nil, err
+	}
+
+	apps := make([]Application, len(dbos))
+	for i := range dbos {
+		err := apps[i].FillFromRaw(dbos[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return apps, nil
 }

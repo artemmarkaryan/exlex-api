@@ -74,6 +74,16 @@ func selectX[m Model](ctx context.Context, c contextSelecter, builder sq.SelectB
 	return
 }
 
+func SelectRawX[m Model](ctx context.Context, sql string, args ...interface{}) (result []m, err error) {
+	sql, err = sq.Dollar.ReplacePlaceholders(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	err = C(ctx).SelectContext(ctx, &result, sql, args...)
+	return
+}
+
 func SelectX[m Model](ctx context.Context, b sq.SelectBuilder) (result []m, err error) {
 	return selectX[m](ctx, C(ctx), b)
 }

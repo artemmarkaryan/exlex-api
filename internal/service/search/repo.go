@@ -12,18 +12,18 @@ import (
 
 type repo struct{}
 
-func (repo) create(ctx context.Context, d CreateSearch) (id uuid.UUID, err error) {
+func (repo) create(ctx context.Context, r CreateSearchRequest) (id uuid.UUID, err error) {
 	err = database.Tx(
 		ctx, database.DefaultTxOptions(),
 
 		func(tx *sqlx.Tx) error {
 			m := map[string]any{
-				"creator":                  d.Creator,
-				"name":                     d.Name,
-				"description":              d.Description,
-				"price":                    d.Price,
-				"required_work_experience": d.RequiredWorkExperience,
-				"deadline":                 d.Deadline,
+				"creator":                  r.Creator,
+				"name":                     r.Name,
+				"description":              r.Description,
+				"price":                    r.Price,
+				"required_work_experience": r.RequiredWorkExperience,
+				"deadline":                 r.Deadline,
 			}
 
 			q := sq.
@@ -37,7 +37,7 @@ func (repo) create(ctx context.Context, d CreateSearch) (id uuid.UUID, err error
 		},
 
 		func(tx *sqlx.Tx) error {
-			if len(d.RequiredSpecialities) == 0 {
+			if len(r.RequiredSpecialities) == 0 {
 				return nil
 			}
 
@@ -45,7 +45,7 @@ func (repo) create(ctx context.Context, d CreateSearch) (id uuid.UUID, err error
 				Insert(new(schema.SearchRequirementSpeciality).TableName()).
 				Columns("search_uuid", "speciality")
 
-			for _, s := range d.RequiredSpecialities {
+			for _, s := range r.RequiredSpecialities {
 				q = q.Values(id, s)
 			}
 
@@ -54,7 +54,7 @@ func (repo) create(ctx context.Context, d CreateSearch) (id uuid.UUID, err error
 		},
 
 		func(tx *sqlx.Tx) error {
-			if len(d.RequiredEducation) == 0 {
+			if len(r.RequiredEducation) == 0 {
 				return nil
 			}
 
@@ -62,7 +62,7 @@ func (repo) create(ctx context.Context, d CreateSearch) (id uuid.UUID, err error
 				Insert(new(schema.SearchRequirementEducation).TableName()).
 				Columns("search_uuid", "education")
 
-			for _, e := range d.RequiredEducation {
+			for _, e := range r.RequiredEducation {
 				q = q.Values(id, e)
 			}
 
@@ -227,4 +227,35 @@ func (repo) apply(ctx context.Context, r SearchApplicationRequest) (applicationI
 
 	applicationID, err = database.GetFromInsertX[uuid.UUID](ctx, q)
 	return
+}
+
+func (r repo) listApplications(ctx context.Context, searchID uuid.UUID) (a []schema.SearchApplicationRaw, err error) {
+	q := `
+select 
+	a.id as application_id,
+	a.user_id,
+	a.created_at,
+	a.comment,
+	em.education,
+	em.full_name,
+	em.experience_years,
+	jsonb_agg(us.speciality) as speciality
+from 
+	search_application a 
+		inner	join user_speciality us on   	a.user_id = us.user_uuid
+		left  	join executor_metadata em on 	a.user_id = em.user_uuid
+where 
+	search_id = ?
+group by 
+	application_id,
+	a.user_id, 
+	a.created_at,
+	a.comment,
+	em.education,
+	em.full_name,
+	em.experience_years
+order by created_at desc
+;`
+
+	return database.SelectRawX[schema.SearchApplicationRaw](ctx, q, searchID)
 }

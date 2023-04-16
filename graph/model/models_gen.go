@@ -8,12 +8,19 @@ import (
 	"strconv"
 )
 
+type Application struct {
+	ID        string   `json:"id"`
+	Applicant Executor `json:"applicant"`
+	CreatedAt string   `json:"createdAt"`
+	Comment   *string  `json:"comment"`
+}
+
 type CreateSearchInput struct {
-	Title        string                   `json:"title"`
-	Description  string                   `json:"description"`
-	Price        float64                  `json:"price"`
-	Deadline     *DateInput               `json:"deadline"`
-	Requirements *SearchRequirementsInput `json:"requirements"`
+	Title        string                  `json:"title"`
+	Description  string                  `json:"description"`
+	Price        float64                 `json:"price"`
+	Deadline     DateInput               `json:"deadline"`
+	Requirements SearchRequirementsInput `json:"requirements"`
 }
 
 type Customer struct {
@@ -38,20 +45,20 @@ type EducationType struct {
 }
 
 type Executor struct {
-	FullName        *string  `json:"fullName"`
-	WorkExperience  *int     `json:"workExperience"`
-	EducationTypeID *string  `json:"educationTypeID"`
+	FullName        string   `json:"fullName"`
+	WorkExperience  int      `json:"workExperience"`
+	EducationTypeID string   `json:"educationTypeID"`
 	Specialization  []string `json:"specialization"`
 }
 
 type Search struct {
-	ID           string              `json:"id"`
-	Title        string              `json:"title"`
-	Description  string              `json:"description"`
-	Price        float64             `json:"price"`
-	CreatedAt    string              `json:"createdAt"`
-	Deadline     *Date               `json:"deadline"`
-	Requirements *SearchRequirements `json:"requirements"`
+	ID           string             `json:"id"`
+	Title        string             `json:"title"`
+	Description  string             `json:"description"`
+	Price        float64            `json:"price"`
+	CreatedAt    string             `json:"createdAt"`
+	Deadline     Date               `json:"deadline"`
+	Requirements SearchRequirements `json:"requirements"`
 }
 
 type SearchRequirements struct {
