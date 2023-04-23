@@ -296,6 +296,7 @@ func (r *queryResolver) CustomerSearch(ctx context.Context, id string) (model.Se
 		Description: s.Description,
 		Price:       s.Price,
 		CreatedAt:   s.CreatedAt.String(),
+		Status:      s.Status.String(),
 		Requirements: model.SearchRequirements{
 			Speciality:     s.RequiredSpecialities,
 			EducationType:  s.RequiredEducation,
@@ -342,6 +343,7 @@ func (r *queryResolver) CustomerSearchApplications(ctx context.Context, id strin
 		dtos[i].ID = apps[i].ID.String()
 		dtos[i].CreatedAt = apps[i].CreatedAt.String()
 		dtos[i].Comment = apps[i].Comment
+		dtos[i].Status = apps[i].Status.String()
 	}
 
 	return dtos, nil
@@ -377,6 +379,7 @@ func (r *queryResolver) CustomerSearches(ctx context.Context) ([]*model.Search, 
 			Price:       s.Price,
 			Deadline:    deadline,
 			CreatedAt:   s.CreatedAt.String(),
+			Status:      s.Status.String(),
 			Requirements: model.SearchRequirements{
 				Speciality:     s.RequiredSpecialities,
 				EducationType:  s.RequiredEducation,

@@ -13,6 +13,7 @@ type Application struct {
 	Applicant Executor `json:"applicant"`
 	CreatedAt string   `json:"createdAt"`
 	Comment   *string  `json:"comment"`
+	Status    string   `json:"status"`
 }
 
 type CreateSearchInput struct {
@@ -59,6 +60,7 @@ type Search struct {
 	CreatedAt    string             `json:"createdAt"`
 	Deadline     Date               `json:"deadline"`
 	Requirements SearchRequirements `json:"requirements"`
+	Status       string             `json:"status"`
 }
 
 type SearchRequirements struct {

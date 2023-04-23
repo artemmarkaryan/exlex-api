@@ -13,6 +13,7 @@ type Search struct {
 	Description            string     `db:"description"`
 	Price                  float64    `db:"price"`
 	RequiredWorkExperience int        `db:"required_work_experience"`
+	Status                 string     `db:"status"`
 	Deadline               *time.Time `db:"deadline"`
 	CreatedAt              time.Time  `db:"created_at"`
 }
@@ -50,6 +51,7 @@ type SearchFullDataRaw struct {
 	CreatedAt              time.Time  `db:"created_at"`
 	Speciality             []byte     `db:"speciality"`
 	Education              []byte     `db:"education"`
+	Status                 string     `db:"status"`
 }
 
 type SearchFullData struct {
@@ -60,6 +62,7 @@ type SearchFullData struct {
 	RequiredWorkExperience int
 	Deadline               *time.Time
 	CreatedAt              time.Time
+	Status                 string
 	Speciality             []string
 	Education              []string
 }

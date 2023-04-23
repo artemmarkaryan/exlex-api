@@ -146,6 +146,7 @@ func (r repo) get(ctx context.Context, search uuid.UUID) (d schema.SearchFullDat
 			"s.required_work_experience",
 			"s.created_at",
 			"s.deadline",
+			"s.status",
 			"jsonb_agg(e.education) as education",
 			"jsonb_agg(sp.speciality) as speciality",
 		).
@@ -170,6 +171,7 @@ func (r repo) listAvailableForApplication(ctx context.Context, user uuid.UUID) (
 			"s.required_work_experience",
 			"s.created_at",
 			"s.deadline",
+			"s.status",
 			"jsonb_agg(e.education) as education",
 			"jsonb_agg(sp.speciality) as speciality",
 		).
@@ -197,6 +199,7 @@ func (r repo) listByAuthor(ctx context.Context, user uuid.UUID) ([]schema.Search
 			"s.required_work_experience",
 			"s.created_at",
 			"s.deadline",
+			"s.status",
 			"jsonb_agg(e.education) as education",
 			"jsonb_agg(sp.speciality) as speciality",
 		).
@@ -236,6 +239,7 @@ select
 	a.user_id,
 	a.created_at,
 	a.comment,
+	a.status,
 	em.education,
 	em.full_name,
 	em.experience_years,

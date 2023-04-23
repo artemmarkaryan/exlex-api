@@ -13,6 +13,7 @@ type SearchApplication struct {
 	UserID    uuid.UUID      `db:"user_id"` // applicant
 	CreatedAt time.Time      `db:"created_at"`
 	Comment   sql.NullString `db:"comment"`
+	Status    string         `db:"status"`
 }
 
 func (a SearchApplication) TableName() string { return "search_application" }
@@ -26,4 +27,5 @@ type SearchApplicationRaw struct {
 	FullName      string         `db:"full_name"`
 	Experience    int            `db:"experience_years"`
 	Specialities  []byte         `db:"speciality"`
+	Status        string         `db:"status"`
 }

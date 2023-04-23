@@ -19,6 +19,13 @@ type CreateSearchRequest struct {
 	RequiredEducation      []string
 }
 
+type Status string
+
+const StatusNew = "new"
+const StatusAssigned = "assigned"
+
+func (s Status) String() string { return string(s) }
+
 type Search struct {
 	ID                     uuid.UUID
 	Name                   string
@@ -29,6 +36,7 @@ type Search struct {
 	CreatedAt              time.Time
 	RequiredSpecialities   []string
 	RequiredEducation      []string
+	Status                 Status
 }
 
 func (s *Search) fillFromRaw(dbo schema.SearchFullDataRaw) (err error) {
@@ -50,6 +58,7 @@ func (s *Search) fillFromRaw(dbo schema.SearchFullDataRaw) (err error) {
 		RequiredWorkExperience: dbo.RequiredWorkExperience,
 		Deadline:               dbo.Deadline,
 		CreatedAt:              dbo.CreatedAt,
+		Status:                 Status(dbo.Status),
 		RequiredEducation:      educations,
 		RequiredSpecialities:   specialities,
 	}
@@ -76,11 +85,25 @@ type Applicant struct {
 	Speciality []string
 }
 
+type ApplicationStatus string
+
+const ApplicationStatusNew = "new"
+const ApplicationStatuApproved = "approved"
+const ApplicationStatuDeclined = "declined"
+
+func (s ApplicationStatus) String() string { return string(s) }
+
+type ApplicationStatusVerbose struct {
+	Code  string
+	Title string
+}
+
 type Application struct {
 	Applicant
 	ID        uuid.UUID
 	CreatedAt time.Time
 	Comment   *string
+	Status    ApplicationStatus
 }
 
 func (a *Application) FillFromRaw(dbo schema.SearchApplicationRaw) error {
@@ -105,6 +128,7 @@ func (a *Application) FillFromRaw(dbo schema.SearchApplicationRaw) error {
 		ID:        dbo.ApplicationID,
 		CreatedAt: dbo.CreatedAt,
 		Comment:   comment,
+		Status:    ApplicationStatus(dbo.Status),
 	}
 	return nil
 }

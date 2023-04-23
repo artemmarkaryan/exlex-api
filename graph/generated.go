@@ -51,6 +51,7 @@ type ComplexityRoot struct {
 		Comment   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Status    func(childComplexity int) int
 	}
 
 	Customer struct {
@@ -106,6 +107,7 @@ type ComplexityRoot struct {
 		ID           func(childComplexity int) int
 		Price        func(childComplexity int) int
 		Requirements func(childComplexity int) int
+		Status       func(childComplexity int) int
 		Title        func(childComplexity int) int
 	}
 
@@ -186,6 +188,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.ID(childComplexity), true
+
+	case "Application.status":
+		if e.complexity.Application.Status == nil {
+			break
+		}
+
+		return e.complexity.Application.Status(childComplexity), true
 
 	case "Customer.fullName":
 		if e.complexity.Customer.FullName == nil {
@@ -474,6 +483,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Search.Requirements(childComplexity), true
+
+	case "Search.status":
+		if e.complexity.Search.Status == nil {
+			break
+		}
+
+		return e.complexity.Search.Status(childComplexity), true
 
 	case "Search.title":
 		if e.complexity.Search.Title == nil {
@@ -1043,6 +1059,50 @@ func (ec *executionContext) _Application_comment(ctx context.Context, field grap
 }
 
 func (ec *executionContext) fieldContext_Application_comment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_status(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Application",
 		Field:      field,
@@ -2440,6 +2500,8 @@ func (ec *executionContext) fieldContext_Query_customerSearch(ctx context.Contex
 				return ec.fieldContext_Search_deadline(ctx, field)
 			case "requirements":
 				return ec.fieldContext_Search_requirements(ctx, field)
+			case "status":
+				return ec.fieldContext_Search_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Search", field.Name)
 		},
@@ -2534,6 +2596,8 @@ func (ec *executionContext) fieldContext_Query_customerSearchApplications(ctx co
 				return ec.fieldContext_Application_createdAt(ctx, field)
 			case "comment":
 				return ec.fieldContext_Application_comment(ctx, field)
+			case "status":
+				return ec.fieldContext_Application_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -2634,6 +2698,8 @@ func (ec *executionContext) fieldContext_Query_customerSearches(ctx context.Cont
 				return ec.fieldContext_Search_deadline(ctx, field)
 			case "requirements":
 				return ec.fieldContext_Search_requirements(ctx, field)
+			case "status":
+				return ec.fieldContext_Search_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Search", field.Name)
 		},
@@ -2806,6 +2872,8 @@ func (ec *executionContext) fieldContext_Query_executorAvailableSearches(ctx con
 				return ec.fieldContext_Search_deadline(ctx, field)
 			case "requirements":
 				return ec.fieldContext_Search_requirements(ctx, field)
+			case "status":
+				return ec.fieldContext_Search_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Search", field.Name)
 		},
@@ -3259,6 +3327,50 @@ func (ec *executionContext) fieldContext_Search_requirements(ctx context.Context
 				return ec.fieldContext_SearchRequirements_workExperience(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SearchRequirements", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Search_status(ctx context.Context, field graphql.CollectedField, obj *model.Search) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Search_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Search_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Search",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5528,6 +5640,13 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 
 			out.Values[i] = ec._Application_comment(ctx, field, obj)
 
+		case "status":
+
+			out.Values[i] = ec._Application_status(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6060,6 +6179,13 @@ func (ec *executionContext) _Search(ctx context.Context, sel ast.SelectionSet, o
 		case "requirements":
 
 			out.Values[i] = ec._Search_requirements(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "status":
+
+			out.Values[i] = ec._Search_status(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

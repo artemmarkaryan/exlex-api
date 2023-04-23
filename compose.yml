@@ -9,7 +9,7 @@ services:
       - "POSTGRES_USER=user"
       - "PGDATA=/var/lib/postgresql/data/exlex"
     ports:
-      - "55432:5432"
+      - "≈:5432"
     command: [ "postgres", "-c", "log_statement=all" ]
     volumes:
       - postgresql:/var/lib/postgresql/data

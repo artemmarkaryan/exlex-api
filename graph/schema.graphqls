@@ -113,11 +113,13 @@ type Search {
     createdAt: String!
     deadline: Date!
     requirements: SearchRequirements!
+    status: String!
 }
 
 type Application {
-    id: ID!,
-    applicant: Executor!,
-    createdAt: String!,
-    comment: String,
+    id: ID!
+    applicant: Executor!
+    createdAt: String!
+    comment: String
+    status: String!
 }
