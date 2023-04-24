@@ -132,3 +132,8 @@ func (a *Application) FillFromRaw(dbo schema.SearchApplicationRaw) error {
 	}
 	return nil
 }
+
+type ApproveApplicationRequest struct {
+	ApplicationID   uuid.UUID
+	SearchCreatorID uuid.UUID
+}

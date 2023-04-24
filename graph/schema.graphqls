@@ -29,6 +29,8 @@ type Mutation {
     setCustomerProfile(data: SetCustomerProfileData!): Boolean!  @role(role: customer) @authenticated
     createSearch(data: CreateSearchInput!): ID! @role(role:customer) @authenticated
     deleteSearch(id: ID!): Boolean! @role(role:customer) @authenticated
+    approveApplication(id: ID!): Boolean! @role(role:customer) @authenticated
+    declineApplication(id: ID!): Boolean! @role(role:customer) @authenticated
 
     # executor mutations
     setExecutorProfile(data: SetExecutorProfileData!): Boolean!  @role(role: executor) @authenticated

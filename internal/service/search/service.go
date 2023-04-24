@@ -116,3 +116,7 @@ func (s Service) ListApplicants(ctx context.Context, r ListApplicantsRequest) ([
 
 	return apps, nil
 }
+
+func (s Service) ApproveApplication(ctx context.Context, r ApproveApplicationRequest) error {
+	return s.repo.approveApplication(ctx, r)
+}

@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"net/mail"
 	"time"
 
@@ -117,6 +118,16 @@ func (r *mutationResolver) DeleteSearch(ctx context.Context, id string) (bool, e
 		Delete(ctx, claims.UserID, searchID)
 
 	return err == nil, err
+}
+
+// ApproveApplication is the resolver for the approveApplication field.
+func (r *mutationResolver) ApproveApplication(ctx context.Context, id string) (bool, error) {
+	panic(fmt.Errorf("not implemented: ApproveApplication - approveApplication"))
+}
+
+// DeclineApplication is the resolver for the declineApplication field.
+func (r *mutationResolver) DeclineApplication(ctx context.Context, id string) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeclineApplication - declineApplication"))
 }
 
 // SetExecutorProfile is the resolver for the SetExecutorProfile field.

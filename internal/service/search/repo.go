@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
@@ -262,4 +263,37 @@ order by created_at desc
 ;`
 
 	return database.SelectRawX[schema.SearchApplicationRaw](ctx, q, searchID)
+}
+
+func (repo) approveApplication(ctx context.Context, r ApproveApplicationRequest) error {
+	var searchID uuid.UUID
+	return database.Tx(ctx, database.DefaultTxOptions(),
+		func(tx *sqlx.Tx) (err error) {
+			q := sq.
+				Select("s.id").
+				From(new(schema.Search).TableName() + " s").
+				InnerJoin(new(schema.SearchApplication).TableName() + "a on a.search_id = s.id").
+				Where(sq.Eq{
+					"a.id":         r.ApplicationID,
+					"s.creator_id": r.SearchCreatorID,
+				})
+
+			searchID, err = database.GetTxX[uuid.UUID](ctx, tx, q)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					return ErrNotFound
+				}
+
+				return err
+			}
+
+			return nil
+		},
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Update(new(schema.Search).TableName()).
+				Set("status", "assigned").
+				Where(sq.Eq{"id": searchID})
+		},
+	)
 }
