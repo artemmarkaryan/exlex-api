@@ -8,22 +8,6 @@
 - `JWT_SECRET_KEY`
 - `TG_TOKEN`
 
-## GraphQL
-
-Схема запросов: `POST <host>:<port>/query`
-
-`body`
-```json
-{"query": "<тело query>"}
-```
-
-#### Авторизация
-
-Полученный token нужно отправлять в header'е Authorization
-```
-Authorization: Bearer <token>
-```
-
 #### Генерация ручек
 
 ```shell
