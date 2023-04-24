@@ -122,7 +122,26 @@ func (r *mutationResolver) DeleteSearch(ctx context.Context, id string) (bool, e
 
 // ApproveApplication is the resolver for the approveApplication field.
 func (r *mutationResolver) ApproveApplication(ctx context.Context, id string) (bool, error) {
-	panic(fmt.Errorf("not implemented: ApproveApplication - approveApplication"))
+	c, err := auth.FromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	applicationID, err := uuid.Parse(id)
+	if err != nil {
+		return false, err
+	}
+
+	req := search.ApproveApplicationRequest{
+		ApplicationID:   applicationID,
+		SearchCreatorID: c.UserID,
+	}
+
+	err = r.ServiceContainer.
+		Search().
+		ApproveApplication(ctx, req)
+
+	return err == nil, err
 }
 
 // DeclineApplication is the resolver for the declineApplication field.
@@ -400,6 +419,29 @@ func (r *queryResolver) CustomerSearches(ctx context.Context) ([]*model.Search, 
 	}), nil
 }
 
+// SearchAssignee is the resolver for the searchAssignee field.
+func (r *queryResolver) SearchAssignee(ctx context.Context, searchID string) (model.Assignee, error) {
+	searchUUID, err := uuid.Parse(searchID)
+	if err != nil {
+		return model.Assignee{}, err
+	}
+
+	assignee, err := r.ServiceContainer.
+		Search().
+		GetSearchAssignee(ctx, searchUUID)
+	if err != nil {
+		return model.Assignee{}, err
+	}
+
+	return model.Assignee{
+		Email:           assignee.Email,
+		FullName:        assignee.FullName,
+		WorkExperience:  assignee.WorkExperience,
+		EducationTypeID: assignee.Education,
+		Specialization:  assignee.Specialities,
+	}, nil
+}
+
 // SelfExecutorProfile is the resolver for the selfExecutorProfile field.
 func (r *queryResolver) SelfExecutorProfile(ctx context.Context) (e model.Executor, err error) {
 	claims, err := auth.FromContext(ctx)
@@ -472,3 +514,10 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.

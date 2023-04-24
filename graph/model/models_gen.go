@@ -16,6 +16,14 @@ type Application struct {
 	Status    string   `json:"status"`
 }
 
+type Assignee struct {
+	Email           string   `json:"email"`
+	FullName        string   `json:"fullName"`
+	WorkExperience  int      `json:"workExperience"`
+	EducationTypeID string   `json:"educationTypeID"`
+	Specialization  []string `json:"specialization"`
+}
+
 type CreateSearchInput struct {
 	Title        string                  `json:"title"`
 	Description  string                  `json:"description"`

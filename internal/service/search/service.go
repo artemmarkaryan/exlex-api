@@ -4,15 +4,22 @@ import (
 	"context"
 	"strings"
 
+	user_profile "github.com/artemmarkaryan/exlex-backend/internal/service/user-profile"
 	"github.com/google/uuid"
 )
 
-type Service struct {
-	repo repo
+type ServiceContainer interface {
+	UserProfile() user_profile.Service
 }
 
-func MakeService() (s Service) {
+type Service struct {
+	repo      repo
+	container ServiceContainer
+}
+
+func MakeService(sc ServiceContainer) (s Service) {
 	s.repo = repo{}
+	s.container = sc
 	return
 }
 
@@ -119,4 +126,29 @@ func (s Service) ListApplicants(ctx context.Context, r ListApplicantsRequest) ([
 
 func (s Service) ApproveApplication(ctx context.Context, r ApproveApplicationRequest) error {
 	return s.repo.approveApplication(ctx, r)
+}
+
+func (s Service) GetSearchAssignee(ctx context.Context, searchID uuid.UUID) (a Assignee, err error) {
+	assigneeID, err := s.repo.getAssigneeID(ctx, searchID)
+	if err != nil {
+		return
+	}
+
+	profile, err := s.container.UserProfile().GetExecutorProfile(ctx, assigneeID)
+	if err != nil {
+		return
+	}
+
+	email, err := s.container.UserProfile().GetUserEmail(ctx, assigneeID)
+	if err != nil {
+		return
+	}
+
+	return Assignee{
+		Email:          email,
+		FullName:       profile.FullName,
+		WorkExperience: profile.WorkExperience,
+		Education:      profile.EducationTypeID,
+		Specialities:   profile.Specialization,
+	}, nil
 }

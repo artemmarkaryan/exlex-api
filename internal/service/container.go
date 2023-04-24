@@ -31,7 +31,7 @@ func MakeContainer(ctx context.Context) (c Container, err error) {
 
 	c.authentication = authentication.Make(ctx, c)
 	c.userProfile = user_profile.MakeService()
-	c.search = search.MakeService()
+	c.search = search.MakeService(c)
 
 	return
 }

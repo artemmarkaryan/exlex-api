@@ -13,6 +13,7 @@ type Query {
     customerSearch(id: ID!): Search! @role(role: customer) @authenticated
     customerSearchApplications(id: ID!): [Application!]! @role(role: customer) @authenticated
     customerSearches: [Search]! @role(role: customer) @authenticated
+    searchAssignee(searchID: ID!): Assignee! @role(role: customer) @authenticated
     
     # executor queries
     selfExecutorProfile: Executor! @role(role: executor) @authenticated 
@@ -59,6 +60,14 @@ input SetExecutorProfileData {
 }
 
 type Executor {
+    fullName: String!
+    workExperience: Int!
+    educationTypeID: ID!
+    specialization: [ID!]!
+}
+
+type Assignee {
+    email: String!
     fullName: String!
     workExperience: Int!
     educationTypeID: ID!
