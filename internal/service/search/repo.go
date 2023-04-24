@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/artemmarkaryan/exlex-backend/internal/schema"
@@ -262,4 +263,66 @@ order by created_at desc
 ;`
 
 	return database.SelectRawX[schema.SearchApplicationRaw](ctx, q, searchID)
+}
+
+func (repo) approveApplication(ctx context.Context, r ApproveApplicationRequest) error {
+	var searchID uuid.UUID
+	return database.Tx(ctx, database.DefaultTxOptions(),
+		func(tx *sqlx.Tx) (err error) {
+			q := sq.
+				Select("s.id").
+				From(new(schema.Search).TableName() + " s").
+				InnerJoin(new(schema.SearchApplication).TableName() + " a on a.search_id = s.id").
+				Where(sq.Eq{
+					"a.id":      r.ApplicationID,
+					"s.creator": r.SearchCreatorID,
+				})
+			searchID, err = database.GetTxX[uuid.UUID](ctx, tx, q)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					return ErrNotFound
+				}
+				return err
+			}
+			return nil
+		},
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Update(new(schema.Search).TableName()).
+				Set("status", StatusAssigned).
+				Where(sq.Eq{"id": searchID})
+			_, err := database.UpdateTxX(ctx, tx, q)
+			return err
+		},
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Update(new(schema.SearchApplication).TableName()).
+				Set("status", ApplicationStatusApproved).
+				Where(sq.Eq{"id": r.ApplicationID})
+			_, err := database.UpdateTxX(ctx, tx, q)
+			return err
+		},
+		func(tx *sqlx.Tx) error {
+			q := sq.
+				Update(new(schema.SearchApplication).TableName()).
+				Set("status", ApplicationStatusDeclined).
+				Where(sq.And{
+					sq.Eq{"search_id": searchID},
+					sq.NotEq{"id": r.ApplicationID},
+				})
+			_, err := database.UpdateTxX(ctx, tx, q)
+			return err
+		},
+	)
+}
+
+func (repo) getAssigneeID(ctx context.Context, searchID uuid.UUID) (uuid.UUID, error) {
+	q := sq.
+		Select("user_id").
+		From(new(schema.SearchApplication).TableName()).
+		Where(sq.Eq{
+			"search_id": searchID,
+			"status":    ApplicationStatusApproved,
+		})
+	return database.GetX[uuid.UUID](ctx, q)
 }

@@ -9,25 +9,11 @@ services:
       - "POSTGRES_USER=user"
       - "PGDATA=/var/lib/postgresql/data/exlex"
     ports:
-      - "≈:5432"
+      - "55432:5432"
     command: [ "postgres", "-c", "log_statement=all" ]
     volumes:
       - postgresql:/var/lib/postgresql/data
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin4_container
-    restart: always
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: artemmarkaryan@yandex.ru
-      PGADMIN_DEFAULT_PASSWORD: password
-    depends_on:
-      - postgresql
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-
 volumes:
   postgresql:
-  pgadmin-data:
+

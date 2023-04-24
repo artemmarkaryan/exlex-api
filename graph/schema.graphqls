@@ -13,6 +13,7 @@ type Query {
     customerSearch(id: ID!): Search! @role(role: customer) @authenticated
     customerSearchApplications(id: ID!): [Application!]! @role(role: customer) @authenticated
     customerSearches: [Search]! @role(role: customer) @authenticated
+    searchAssignee(searchID: ID!): Assignee! @role(role: customer) @authenticated
     
     # executor queries
     selfExecutorProfile: Executor! @role(role: executor) @authenticated 
@@ -29,6 +30,8 @@ type Mutation {
     setCustomerProfile(data: SetCustomerProfileData!): Boolean!  @role(role: customer) @authenticated
     createSearch(data: CreateSearchInput!): ID! @role(role:customer) @authenticated
     deleteSearch(id: ID!): Boolean! @role(role:customer) @authenticated
+    approveApplication(id: ID!): Boolean! @role(role:customer) @authenticated
+    declineApplication(id: ID!): Boolean! @role(role:customer) @authenticated
 
     # executor mutations
     setExecutorProfile(data: SetExecutorProfileData!): Boolean!  @role(role: executor) @authenticated
@@ -57,6 +60,14 @@ input SetExecutorProfileData {
 }
 
 type Executor {
+    fullName: String!
+    workExperience: Int!
+    educationTypeID: ID!
+    specialization: [ID!]!
+}
+
+type Assignee {
+    email: String!
     fullName: String!
     workExperience: Int!
     educationTypeID: ID!

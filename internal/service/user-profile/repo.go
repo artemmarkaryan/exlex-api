@@ -257,3 +257,13 @@ func (repo) getExecutorProfile(ctx context.Context, id uuid.UUID) (m schema.Full
 
 	return
 }
+
+func (repo) getEmail(ctx context.Context, id uuid.UUID) (string, error) {
+	q := sq.
+		Select("email").
+		From(new(schema.UserAuth).TableName()).
+		Where(sq.Eq{
+			"id": id,
+		})
+	return database.GetX[string](ctx, q)
+}

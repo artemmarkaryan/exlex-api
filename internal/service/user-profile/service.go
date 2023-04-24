@@ -27,23 +27,6 @@ func (s Service) EducationTypes(ctx context.Context) ([]schema.EducationType, er
 	return s.repo.educationTypes(ctx)
 }
 
-type UpdateUserProfileData struct {
-	UserUUID uuid.UUID
-}
-
-type UpdateExecutorProfileData struct {
-	UpdateUserProfileData
-	FullName        *string
-	ExperienceYears *int
-	Specialities    []string
-	Education       *string
-}
-
-type UpdateCustomerProfileData struct {
-	UpdateUserProfileData
-	Name *string
-}
-
 func (s Service) UpdateCustomerProfile(ctx context.Context, d UpdateCustomerProfileData) error {
 	if d.UserUUID == *new(uuid.UUID) {
 		return ErrNoUserIDProvided
@@ -64,10 +47,6 @@ func (s Service) UpdateExecutorProfile(ctx context.Context, d UpdateExecutorProf
 	return nil
 }
 
-type CustomerProfile struct {
-	FullName string
-}
-
 func (s Service) GetCustomerProfile(ctx context.Context, id uuid.UUID) (CustomerProfile, error) {
 	cp, err := s.repo.getCustomerProfile(ctx, id)
 	if err != nil {
@@ -79,11 +58,8 @@ func (s Service) GetCustomerProfile(ctx context.Context, id uuid.UUID) (Customer
 	}, nil
 }
 
-type ExecutorProfile struct {
-	FullName        string
-	WorkExperience  int
-	EducationTypeID string
-	Specialization  []string
+func (s Service) GetUserEmail(ctx context.Context, id uuid.UUID) (string, error) {
+	return s.repo.getEmail(ctx, id)
 }
 
 func (s Service) GetExecutorProfile(ctx context.Context, id uuid.UUID) (ExecutorProfile, error) {

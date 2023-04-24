@@ -88,8 +88,8 @@ type Applicant struct {
 type ApplicationStatus string
 
 const ApplicationStatusNew = "new"
-const ApplicationStatuApproved = "approved"
-const ApplicationStatuDeclined = "declined"
+const ApplicationStatusApproved = "approved"
+const ApplicationStatusDeclined = "declined"
 
 func (s ApplicationStatus) String() string { return string(s) }
 
@@ -131,4 +131,17 @@ func (a *Application) FillFromRaw(dbo schema.SearchApplicationRaw) error {
 		Status:    ApplicationStatus(dbo.Status),
 	}
 	return nil
+}
+
+type ApproveApplicationRequest struct {
+	ApplicationID   uuid.UUID
+	SearchCreatorID uuid.UUID
+}
+
+type Assignee struct {
+	Email          string
+	FullName       string
+	WorkExperience int
+	Education      string
+	Specialities   []string
 }
