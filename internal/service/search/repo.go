@@ -247,7 +247,7 @@ select
 	jsonb_agg(us.speciality) as speciality
 from 
 	search_application a 
-		inner	join user_speciality us on   	a.user_id = us.user_uuid
+		left	join user_speciality us on   	a.user_id = us.user_uuid
 		left  	join executor_metadata em on 	a.user_id = em.user_uuid
 where 
 	search_id = ?
